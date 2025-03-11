@@ -41,6 +41,16 @@ const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
 export class Viewer {
 
     constructor(options = {}) {
+        // Parent element of the Three.js renderer canvas
+        // Can be an HTMLElement or a React ref's current property 
+        this.rootElement = options.rootElement;
+        
+        // Optional styles to apply to the rootElement if it needs to be created
+        this.containerStyles = options.containerStyles || {
+            width: '100%',
+            height: '100%',
+            position: 'absolute'
+        };
 
         // The natural 'up' vector for viewing the scene (only has an effect when used with orbit controls and
         // when the viewer uses its own camera).
@@ -302,9 +312,7 @@ export class Viewer {
         if (!this.rootElement) {
             if (!this.usingExternalRenderer) {
                 this.rootElement = document.createElement('div');
-                this.rootElement.style.width = '100%';
-                this.rootElement.style.height = '100%';
-                this.rootElement.style.position = 'absolute';
+                Object.assign(this.rootElement.style, this.containerStyles);
                 document.body.appendChild(this.rootElement);
             } else {
                 this.rootElement = this.renderer.domElement || document.body;
