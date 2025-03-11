@@ -42,9 +42,9 @@ export class Viewer {
 
     constructor(options = {}) {
         // Parent element of the Three.js renderer canvas
-        // Can be an HTMLElement or a React ref's current property 
+        // Can be an HTMLElement or a React ref's current property
         this.rootElement = options.rootElement;
-        
+
         // Optional styles to apply to the rootElement if it needs to be created
         this.containerStyles = options.containerStyles || {
             width: '100%',
