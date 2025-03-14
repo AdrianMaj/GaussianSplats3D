@@ -22,17 +22,16 @@ module.exports = {
       'sourceType': 'module',
     },
     'rules': {
-      "indent": ["error", 4],
-      "max-len": ["error", 140],
-      "object-curly-spacing": ["off"],
-      "comma-dangle": ["off"],
-      "prefer-const": ["off"],
-      'require-jsdoc': ["off"],
-      "padded-blocks": ["off"],
-      "indent": ["off"],
-      "arrow-parens": ["off"],
-      "no-unused-vars": ["error"],
-      "valid-jsdoc" : ["off"]
+      'indent': ['error', 4],
+      'max-len': ['warning', 140],
+      'object-curly-spacing': ['off'],
+      'comma-dangle': ['off'],
+      'prefer-const': ['off'],
+      'require-jsdoc': ['off'],
+      'padded-blocks': ['off'],
+      'indent': ['off'],
+      'arrow-parens': ['off'],
+      'no-unused-vars': ['error'],
+      'valid-jsdoc': ['off']
     },
   };
-  

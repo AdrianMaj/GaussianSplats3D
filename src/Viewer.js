@@ -26,6 +26,7 @@ import { RenderMode } from './RenderMode.js';
 import { LogLevel } from './LogLevel.js';
 import { SceneRevealMode } from './SceneRevealMode.js';
 import { SplatRenderMode } from './SplatRenderMode.js';
+import { GSVisionLogo } from './ui/GSVisionLogo.js';
 
 const THREE_CAMERA_FOV = 50;
 const MINIMUM_DISTANCE_TO_NEW_FOCAL_POINT = .75;
@@ -51,6 +52,8 @@ export class Viewer {
             height: '100%',
             position: 'absolute'
         };
+
+        this.hideAttribution = options.hideAttribution || false;
 
         // The natural 'up' vector for viewing the scene (only has an effect when used with orbit controls and
         // when the viewer uses its own camera).
@@ -285,6 +288,7 @@ export class Viewer {
         this.loadingProgressBar.hide();
         this.infoPanel = new InfoPanel(this.rootElement || document.body);
         this.infoPanel.hide();
+        this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
 
         this.usingExternalCamera = (this.dropInMode || this.camera) ? true : false;
         this.usingExternalRenderer = (this.dropInMode || this.renderer) ? true : false;
