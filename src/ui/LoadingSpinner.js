@@ -120,6 +120,7 @@ export class LoadingSpinner {
                 height: 20px;
                 font-family: arial;
                 font-size: 12pt;
+                text-wrap: nowrap;
                 color: #000000;
                 text-align: center;
                 vertical-align: middle;
@@ -203,7 +204,8 @@ export class LoadingSpinner {
                 left: 50%;
                 transform: translate(-50%, 0);
                 display: flex;
-                flex-direction: row;
+                flex-direction: column;
+                justify-content: center;
                 align-items: center;
                 pointer-events: auto;
             }
@@ -217,6 +219,13 @@ export class LoadingSpinner {
             .messageContainerMin${this.elementID} {
                 margin: 0;
                 padding: 0 10px;
+            }
+
+            @media (min-width: 768px) {
+                .spinnerContainerMin${this.elementID} {
+                    flex-direction: row;
+                    justify-content: start;
+                }
             }
         `;
         
