@@ -35,12 +35,59 @@ const FOCUS_MARKER_FADE_IN_SPEED = 10.0;
 const FOCUS_MARKER_FADE_OUT_SPEED = 2.5;
 const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
 
+
+/**
+ * @typedef {Object} ViewerOptions
+ * @property {HTMLElement|Object} [rootElement] - Parent element of the Three.js renderer canvas. Can be an HTMLElement or a React ref's current property
+ * @property {Object} [containerStyles] - Optional styles to apply to the rootElement if it needs to be created
+ * @property {boolean} [hideAttribution=false] - Whether to hide attribution
+ * @property {number[]} [cameraUp=[0,1,0]] - The natural 'up' vector for viewing the scene
+ * @property {number[]} [initialCameraPosition=[0,10,15]] - The camera's initial position
+ * @property {number[]} [initialCameraLookAt=[0,0,0]] - The initial focal point of the camera and center of the camera's orbit
+ * @property {boolean} [dropInMode=false] - Flag used internally to support the usage of the viewer as a Three.js scene object
+ * @property {boolean} [selfDrivenMode=true] - If true, the viewer manages its own update/animation loop via requestAnimationFrame()
+ * @property {boolean} [useBuiltInControls=true] - If true, the viewer will create its own instance of OrbitControls and attach to the camera
+ * @property {boolean} [ignoreDevicePixelRatio=false] - Pretend the device pixel ratio is 1 to boost performance on devices where it is larger
+ * @property {boolean} [halfPrecisionCovariancesOnGPU=false] - Use 16-bit floating point values when storing splat covariance data in textures
+ * @property {Object} [threeScene] - If valid, it will be rendered by the viewer along with the splat mesh
+ * @property {Object} [renderer] - Allows for usage of an external Three.js renderer
+ * @property {Object} [camera] - Allows for usage of an external Three.js camera
+ * @property {boolean} [gpuAcceleratedSort=false] - If true, a partially GPU-accelerated approach to sorting splats will be used
+ * @property {boolean} [integerBasedSort=true] - If true, integer versions of values are used for sorting calculations
+ * @property {boolean} [sharedMemoryForWorkers=true] - If true, a SharedArrayBuffer will be used to communicate with web workers
+ * @property {boolean} [dynamicScene=false] - If true, viewer assumes scene elements are not stationary or the number of splats may change
+ * @property {boolean} [antialiased=false] - When true, performs additional steps during rendering to address artifacts
+ * @property {number} [kernel2DSize=0.3] - Constant added to the projected 2D screen-space splat scales
+ * @property {number} [webXRMode=0] - WebXR mode setting
+ * @property {Object} [webXRSessionInit={}] - WebXR session initialization options
+ * @property {number} [renderMode] - Controls if the viewer renders on every update or only when changes occur
+ * @property {number} [sceneRevealMode] - Controls how scenes are visually revealed when loaded
+ * @property {number} [focalAdjustment=1.0] - Parameter for tweaking focal length related calculations
+ * @property {number} [maxScreenSpaceSplatSize=1024] - Maximum screen-space splat size
+ * @property {number} [logLevel=0] - The verbosity of console logging
+ * @property {number} [sphericalHarmonicsDegree=0] - Degree of spherical harmonics to utilize in rendering splats (0-2)
+ * @property {boolean} [enableOptionalEffects=false] - When true, allows for usage of extra properties during rendering
+ * @property {boolean} [enableSIMDInSort=true] - Enable SIMD WebAssembly instructions for splat sorting
+ * @property {number} [inMemoryCompressionLevel=0] - Level to compress non KSPLAT files when loading them
+ * @property {boolean} [optimizeSplatData=true] - Reorder splat data in memory after loading to optimize cache utilization
+ * @property {boolean} [freeIntermediateSplatData=false] - When true, intermediate splat data will be freed after loading
+ * @property {number} [splatRenderMode] - Controls how splats are rendered
+ * @property {number} [sceneFadeInRateMultiplier=1.0] - Customizes the speed at which the scene is revealed
+ * @property {number} [splatSortDistanceMapPrecision] - Sets the range for the depth map for the counting sort
+ * @property {string} [backgroundColor="#000000"] - Background color
+ * @property {string} [barColor="#FFFFFF"] - Color for progress bar
+ * @property {string} [mask] - URL to mask image for progress bar
+ */
+
 /**
  * Viewer: Manages the rendering of splat scenes. Manages an instance of SplatMesh as well as a web worker
  * that performs the sort for its splats.
  */
 export class Viewer {
-
+    /**
+     * 
+     * @param {ViewerOptions} options - Configuration options for the viewer
+     */
     constructor(options = {}) {
         // Parent element of the Three.js renderer canvas
         // Can be an HTMLElement or a React ref's current property
@@ -282,9 +329,13 @@ export class Viewer {
         this.splatSceneDownloadAndBuildPromise = null;
         this.splatSceneRemovalPromise = null;
 
+        this.backgroundColor = options.backgroundColor;
+        this.barColor = options.barColor;
+        this.mask = options.mask || null;
+
         this.loadingSpinner = new LoadingSpinner(null, this.rootElement || document.body);
         this.loadingSpinner.hide();
-        this.loadingProgressBar = new LoadingProgressBar(this.rootElement || document.body);
+        this.loadingProgressBar = new LoadingProgressBar(this.rootElement || document.body, this.mask, this.backgroundColor, this.barColor);
         this.loadingProgressBar.hide();
         this.infoPanel = new InfoPanel(this.rootElement || document.body);
         this.infoPanel.hide();

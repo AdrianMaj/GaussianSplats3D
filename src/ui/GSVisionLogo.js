@@ -42,6 +42,7 @@ export class GSVisionLogo {
                 margin: 10px;
                 height: fit-content;
                 opacity: 0.7;
+                z-index: 1000;
             }
         `;
         this.gsVisionLogoElement.appendChild(style);

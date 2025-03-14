@@ -1,102 +1,113 @@
 export class LoadingProgressBar {
-
-    constructor(container) {
-
-        this.idGen = 0;
-
-        this.tasks = [];
-
+    /**
+     * Creates a simple SVG loading progress bar that fills with color using CSS mask
+     * @param {HTMLElement} [container=document.body] - The container element
+     * @param {string} [barColor="black"] - Fill color for the progress 
+     * @param {string} [backgroundColor="white"] - Background color
+     */
+    constructor(container, barColor, backgroundColor = 'white') {
         this.container = container || document.body;
-
-        this.progressBarContainerOuter = document.createElement('div');
-        this.progressBarContainerOuter.className = 'progressBarOuterContainer';
-        this.progressBarContainerOuter.style.display = 'none';
-
-        this.progressBarBox = document.createElement('div');
-        this.progressBarBox.className = 'progressBarBox';
-
-        this.progressBarBackground = document.createElement('div');
-        this.progressBarBackground.className = 'progressBarBackground';
-
+        this.barColor = barColor;
+        this.backgroundColor = backgroundColor;
+        
+        // Create the main container
         this.progressBar = document.createElement('div');
-        this.progressBar.className = 'progressBar';
+        this.progressBar.className = 'progress-bar-container';
+        this.progressBar.style.display = 'none';
+        
+        // Create loading fill element
+        this.loadingFill = document.createElement('div');
+        this.loadingFill.className = 'loading-fill';
 
-        this.progressBarBackground.appendChild(this.progressBar);
-        this.progressBarBox.appendChild(this.progressBarBackground);
-        this.progressBarContainerOuter.appendChild(this.progressBarBox);
-
+        this.progressBarBorder = document.createElement('div');
+        this.progressBarBorder.className = 'progress-bar-container progress-bar-container-border';
+        
+        // Add to the container
+        this.progressBar.appendChild(this.loadingFill);
+        
+        // Create SVG mask as data URI
+        const svgMask = encodeURIComponent(`
+        <svg width="1255" height="219" viewBox="0 0 1255 219" fill="white" xmlns="http://www.w3.org/2000/svg">
+            <path d="M932.241 0.82733C932.502 0.795399 932.764 0.752843 933.027 0.731556C963.013 -1.60851 993.558 5.3478 1016.9 24.8985C1039.69 43.9916 1051.33 69.3887 1053.84 98.8546C1056.38 128.83 1049.27 158.568 1029.43 181.649C1011.04 203.054 985.034 215.031 957.046 217.175C956.577 217.231 956.107 217.292 955.637 217.343C927.135 220.479 893.395 212.642 870.876 194.49C847.985 176.039 836.461 150.087 833.64 121.203C830.82 92.3302 838.232 60.892 856.928 38.2319C876.18 14.8997 902.595 3.58249 932.241 0.82733ZM946.797 160.895C960.136 158.992 970.948 154.393 979.352 143.343C988.857 130.849 991.442 114.764 989.21 99.4765C987.326 86.5735 981.096 74.7424 970.51 66.9118C969.43 66.1099 968.316 65.3558 967.17 64.6492C966.023 63.9437 964.847 63.2894 963.644 62.6863C962.441 62.0831 961.214 61.5327 959.963 61.035C958.712 60.5383 957.442 60.0963 956.152 59.7091C954.862 59.3229 953.558 58.9929 952.24 58.7192C950.922 58.4456 949.595 58.2296 948.258 58.0715C946.921 57.9134 945.579 57.8135 944.233 57.772C942.888 57.7304 941.543 57.7471 940.199 57.8221C927.587 58.8394 917.141 63.7506 908.887 73.4226C899.191 84.7869 895.653 100.288 896.894 114.954C898.025 128.327 903.464 141.867 913.919 150.648C923.271 158.504 934.8 161.273 946.797 160.895Z" fill="black"></path>
+            <path d="M1189.75 4.31691C1211.43 4.3458 1233.18 4.03712 1254.85 4.72743L1254.74 143.311L1254.45 191.694C1254.4 197.828 1254.99 204.322 1254.56 210.392C1254.49 211.438 1254.19 212.116 1253.62 212.981L1251.32 213.294C1233.06 213.01 1214.76 213.206 1196.5 213.192C1175.59 181.85 1153.43 151.143 1131.7 120.352L1131.71 213.241C1110.47 213.086 1089.22 213.052 1067.97 213.141L1067.99 4.35946L1128.63 4.4416C1148.62 34.0779 1170.1 62.6908 1189.7 92.584C1190.49 63.2382 1189.71 33.684 1189.75 4.31691Z" fill="black"></path>
+            <path d="M110.273 0.0730966C116.166 -0.150418 122.432 0.159772 128.305 0.716279C160.819 3.79531 185.141 16.9416 205.91 41.8597C191.162 52.6812 177.245 64.5944 162.39 75.3444C155.992 69.6106 149.347 64.6096 141.288 61.4394C126.796 55.7375 108.719 56.3639 94.5584 62.7957C82.7121 68.1767 72.9383 77.9354 68.433 90.2241C63.4822 103.725 64.3261 120.238 70.51 133.204C70.8679 133.944 71.2439 134.675 71.6383 135.397C72.0316 136.119 72.4426 136.83 72.8714 137.532C73.3012 138.233 73.7477 138.924 74.211 139.603C74.6742 140.282 75.1537 140.949 75.6494 141.605C76.1461 142.26 76.6585 142.903 77.1866 143.533C77.7147 144.163 78.258 144.779 78.8166 145.382C79.3751 145.986 79.9483 146.576 80.5363 147.151C81.1242 147.725 81.7258 148.285 82.3411 148.831C82.9564 149.375 83.5849 149.904 84.2266 150.418C84.8682 150.932 85.5225 151.43 86.1895 151.911C86.8555 152.394 87.5332 152.859 88.2225 153.307C88.9118 153.755 89.6117 154.185 90.3223 154.598C91.0329 155.012 91.7536 155.407 92.4844 155.785C93.2143 156.164 93.9533 156.523 94.7014 156.864C95.4495 157.205 96.2056 157.528 96.9699 157.831C97.7332 158.135 98.5042 158.42 99.2827 158.685C112.719 163.204 132.03 162.682 144.685 156.02C153.253 151.51 157.048 143.977 159.799 135.126C143.951 134.847 128.063 134.993 112.212 134.939L112.38 89.841C138.034 90.1714 163.689 90.2307 189.344 90.0189L227.665 90.0599L227.939 93.0356C230.798 125.503 225.442 157.242 203.821 182.706C184.977 204.896 158.767 215.943 130.062 218.011C96.4271 220.433 61.0433 214.409 34.8799 191.673C13.5791 173.162 2.18775 146.218 0.309619 118.341C-1.63603 89.4609 5.47113 59.5403 24.951 37.4777C47.1155 12.3725 77.6382 2.08777 110.273 0.0730966Z" fill="black"></path>
+            <path d="M657.158 0.812101C662.115 -0.0302618 667.899 0.156743 672.939 0.252536C697.176 0.71325 717.279 7.73038 736.944 21.6613C728.769 38.0919 720.808 54.7826 711.813 70.7799C704.158 65.7789 696.215 61.1763 687.536 58.1931C678.591 55.1171 665.335 52.9154 656.662 57.5408C654.576 58.6523 653.572 59.8444 652.909 62.1555C653.22 67.1398 657.231 70.6734 661.239 73.1549C666.877 76.646 673.487 78.6333 679.677 80.9156C697.622 87.5328 718.932 94.1972 732.162 108.672C743.492 121.068 749.261 139.253 748.27 155.921C747.318 171.941 740.375 186.104 728.357 196.731C708.08 214.661 680.596 218.291 654.514 216.639C626.901 215.558 601.825 206.044 579.785 189.694C587.103 173.395 595.384 156.984 604.018 141.342C621.578 153.858 646.525 164.743 668.592 162.868C673.084 162.486 678.571 161.563 681.557 157.805C683.046 155.933 683.441 153.81 683.124 151.484C681.469 139.365 639.033 127.594 628.586 123.189C621.49 120.196 614.694 116.648 608.584 111.926C596.02 102.224 588.612 89.0822 586.64 73.3328C586.513 72.3688 586.41 71.4018 586.331 70.4317C586.252 69.4626 586.198 68.492 586.168 67.5199C586.138 66.5478 586.132 65.5751 586.151 64.602C586.17 63.6299 586.213 62.6588 586.281 61.6887C586.348 60.7187 586.439 59.7506 586.556 58.7846C586.672 57.8185 586.811 56.8565 586.976 55.8986C587.14 54.9397 587.328 53.9853 587.541 53.0355C587.753 52.0867 587.989 51.1435 588.248 50.2058C588.508 49.2682 588.791 48.3382 589.097 47.4157C589.403 46.4923 589.732 45.5769 590.084 44.6697C590.435 43.7635 590.81 42.8663 591.207 41.9784C591.605 41.0904 592.024 40.2131 592.465 39.3464C592.906 38.4797 593.368 37.6242 593.851 36.7798C594.335 35.9364 594.84 35.1052 595.366 34.2861C595.892 33.4681 596.438 32.6637 597.003 31.873C597.569 31.0814 598.154 30.3049 598.76 29.5437C612.718 11.9301 635.48 3.36352 657.158 0.812101Z" fill="black"></path>
+            <path d="M313.107 3.11569C325.604 2.61544 338.178 3.35895 350.656 4.0371C358.677 25.4459 365.605 47.3048 372.749 69.0161C371.259 68.3968 369.765 67.7891 368.265 67.193C353.951 61.5109 328.509 52.9748 313.384 60.0923C311.368 61.0411 309.464 62.5114 308.953 64.8165C306.44 76.1215 334.516 83.5993 342.184 86.6723C348.062 89.0275 353.757 91.6611 359.253 94.81C365.472 98.3741 370.771 103.342 375.264 108.902C384.933 120.872 397.225 151.638 395.402 166.672C393.669 180.964 385.113 192.778 373.853 201.288C349.017 220.058 315.343 219.773 285.974 215.505C266.733 211.613 250.411 203.765 234.158 192.932L259.111 140.926C273.573 151.289 289.155 162.19 307.462 163.491C315.251 164.045 325.282 163.498 331.273 157.808C332.859 156.304 333.713 154.616 333.716 152.401C333.735 138.835 297.118 128.43 286.238 123.529C278.387 119.991 270.562 115.916 263.942 110.344C252.015 100.304 245.921 87.3519 244.688 71.9127C243.38 55.514 245.918 40.093 256.908 27.3465C271.02 10.9828 292.26 4.6955 313.107 3.11569Z" fill="black"></path>
+            <path d="M759.319 4.47647C780.556 4.12523 801.836 4.37006 823.076 4.34269L823.036 145.46L823.179 187.587C823.217 196.021 823.698 204.804 822.822 213.192C801.602 212.986 780.381 212.925 759.161 213.011L759.319 4.47647Z" fill="black"></path>
+            <path d="M506.632 4.26819L568.111 4.44609C568.707 30.088 568.362 55.812 568.418 81.463C568.718 125.358 568.712 169.253 568.4 213.148C547.796 212.682 527.189 212.518 506.58 212.657L506.632 4.26819Z" fill="black"></path>
+            <path d="M434.4 3.82574C457.678 4.21094 480.957 4.41823 504.239 4.44763C499.321 18.2417 493.309 31.6876 488.145 45.4041L437.204 180.883C433.235 190.962 429.527 201.136 426.08 211.404C418.813 193.331 415.683 173.207 411.145 154.336C407.374 138.658 402.231 123.689 395.857 108.888C399.357 97.1774 404.162 85.5106 408.437 74.055C417.382 50.7527 426.036 27.343 434.4 3.82574Z" fill="black"></path>
+        </svg>
+        `);
+        
+        // Apply styles
         const style = document.createElement('style');
         style.innerHTML = `
-
-            .progressBarOuterContainer {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                top: 0;
-                left: 0;
-                position: absolute;
+            .progress-bar-container {
+                position: fixed;
+                bottom: 28px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 300px;
+                background-color: ${this.backgroundColor ?? "white"};
+                height: 60px;
+                z-index: 9999;
+                -webkit-mask: url("data:image/svg+xml;charset=utf8,${svgMask}") no-repeat center;
+                mask: url("data:image/svg+xml;charset=utf8,${svgMask}") no-repeat center;
+                -webkit-mask-size: contain;
+                mask-size: contain;
                 pointer-events: none;
             }
-
-            .progressBarBox {
-                z-index:99999;
-                padding: 7px 9px 5px 7px;
-                background-color: rgba(190, 190, 190, 0.75);
-                border: #555555 1px solid;
-                border-radius: 15px;
-                margin: 0;
-                position: absolute;
-                bottom: 50px;
-                left: 50%;
-                transform: translate(-50%, 0);
-                width: 180px;
-                height: 30px;
-                pointer-events: auto;
-            }
-
-            .progressBarBackground {
+            
+            .loading-fill {
                 width: 100%;
-                height: 25px;
-                border-radius:10px;
-                background-color: rgba(128, 128, 128, 0.75);
-                border: #444444 1px solid;
-                box-shadow: inset 0 0 10px #333333;
+                height: 100%;
+                background-color: ${this.barColor ?? "#8200DB"};
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.3s ease-out;
             }
-
-            .progressBar {
-                height: 25px;
-                width: 0px;
-                border-radius:10px;
-                background-color: rgba(0, 200, 0, 0.75);
-                box-shadow: inset 0 0 10px #003300;
-            }
-
         `;
-        this.progressBarContainerOuter.appendChild(style);
-        this.container.appendChild(this.progressBarContainerOuter);
+        
+        this.progressBar.appendChild(style);
+        this.container.appendChild(this.progressBar);
     }
-
+    
+    /**
+     * Shows the loading progress bar
+     */
     show() {
-        this.progressBarContainerOuter.style.display = 'block';
+        this.progressBar.style.display = 'block';
     }
-
+    
+    /**
+     * Hides the loading progress bar
+     */
     hide() {
-        this.progressBarContainerOuter.style.display = 'none';
+        this.progressBar.style.display = 'none';
     }
-
+    
+    /**
+     * Updates the progress of the loading bar
+     * @param {number} progress - Progress percentage (0-100)
+     */
     setProgress(progress) {
-        this.progressBar.style.width = progress + '%';
+        const clampedProgress = Math.min(Math.max(progress, 0), 100);
+        if (this.loadingFill) {
+            this.loadingFill.style.transform = `scaleX(${clampedProgress / 100})`;
+        }
     }
-
+    
+    /**
+     * Sets a new container for the loading progress bar
+     * @param {HTMLElement} container - New container element
+     */
     setContainer(container) {
-        if (this.container && this.progressBarContainerOuter.parentElement === this.container) {
-            this.container.removeChild(this.progressBarContainerOuter);
+        if (this.container && this.progressBar.parentElement === this.container) {
+            this.container.removeChild(this.progressBar);
         }
         if (container) {
             this.container = container;
-            this.container.appendChild(this.progressBarContainerOuter);
-            this.progressBarContainerOuter.style.zIndex = this.container.style.zIndex + 1;
+            this.container.appendChild(this.progressBar);
         }
     }
-
 }
