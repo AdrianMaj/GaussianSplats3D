@@ -139,7 +139,6 @@ export class LoadingSpinner {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                 pointer-events: auto;
             }
 
@@ -195,8 +194,7 @@ export class LoadingSpinner {
 
             .spinnerContainerMin${this.elementID} {
                 z-index: 99999;
-                background-color: rgba(50, 50, 50, 0.85);
-                border: #666666 1px solid;
+                background-color: white;
                 border-radius: 10px;
                 padding: 10px 20px;
                 margin: 0;
@@ -208,7 +206,6 @@ export class LoadingSpinner {
                 flex-direction: row;
                 align-items: center;
                 pointer-events: auto;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             }
 
             .logoContainerMin${this.elementID} {
