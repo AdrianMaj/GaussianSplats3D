@@ -100,7 +100,7 @@ class OrbitControls extends EventDispatcher {
         this.autoRotateSpeed = 2.0; // 30 seconds per orbit when fps is 60
 
         // The four arrow keys
-        this.keys = { LEFT: 'KeyA', UP: 'KeyW', RIGHT: 'KeyD', BOTTOM: 'KeyS' };
+        this.keys = { LEFT: 'KeyA', UP: 'KeyQ', RIGHT: 'KeyD', BOTTOM: 'KeyE', FORWARD: 'KeyW', BACKWARD: 'KeyS' };
 
         // Mouse buttons
         this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
@@ -141,6 +141,7 @@ class OrbitControls extends EventDispatcher {
         this.listenToKeyEvents = function( domElement ) {
 
             domElement.addEventListener( 'keydown', onKeyDown );
+            domElement.addEventListener( 'keyup', onKeyUp );
             this._domElementKeyEvents = domElement;
 
         };
@@ -148,6 +149,7 @@ class OrbitControls extends EventDispatcher {
         this.stopListenToKeyEvents = function() {
 
             this._domElementKeyEvents.removeEventListener( 'keydown', onKeyDown );
+            this._domElementKeyEvents.removeEventListener( 'keyup', onKeyUp );
             this._domElementKeyEvents = null;
 
         };
@@ -428,6 +430,11 @@ class OrbitControls extends EventDispatcher {
         }();
 
         this.dispose = function() {
+            
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
 
             scope.domElement.removeEventListener( 'contextmenu', onContextMenu );
 
@@ -442,6 +449,7 @@ class OrbitControls extends EventDispatcher {
             if ( scope._domElementKeyEvents !== null ) {
 
                 scope._domElementKeyEvents.removeEventListener( 'keydown', onKeyDown );
+                scope._domElementKeyEvents.removeEventListener( 'keyup', onKeyUp );
                 scope._domElementKeyEvents = null;
 
             }
@@ -534,6 +542,16 @@ class OrbitControls extends EventDispatcher {
 
         }();
 
+        const panForward = function() {
+            const v = new Vector3();
+        
+            return function panForward(distance, objectMatrix) {
+                v.setFromMatrixColumn(objectMatrix, 2); // get Z column of objectMatrix
+                v.multiplyScalar(distance);
+                panOffset.add(v);
+            };
+        }();
+
         const panUp = function() {
 
             const v = new Vector3();
@@ -561,46 +579,54 @@ class OrbitControls extends EventDispatcher {
 
         // deltaX and deltaY are in pixels; right and down are positive
         const pan = function() {
-
             const offset = new Vector3();
-
-            return function pan( deltaX, deltaY ) {
-
+        
+            return function pan(deltaX, deltaY, deltaZ = 0) {
                 const element = scope.domElement;
-
-                if ( scope.object.isPerspectiveCamera ) {
-
+        
+                if (scope.object.isPerspectiveCamera) {
                     // perspective
                     const position = scope.object.position;
-                    offset.copy( position ).sub( scope.target );
+                    offset.copy(position).sub(scope.target);
                     let targetDistance = offset.length();
-
+        
                     // half of the fov is center to top of screen
-                    targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
-
+                    targetDistance *= Math.tan((scope.object.fov / 2) * Math.PI / 180.0);
+        
                     // we use only clientHeight here so aspect ratio does not distort speed
-                    panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
-                    panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
-
-                } else if ( scope.object.isOrthographicCamera ) {
-
+                    const panSpeed = targetDistance / element.clientHeight * 1.5;
+                    
+                    // Use the same divisor for all directions to maintain consistent speed
+                    panLeft(2 * deltaX * panSpeed, scope.object.matrix);
+                    panUp(2 * deltaY * panSpeed, scope.object.matrix);
+                    
+                    // Add forward/backward movement if requested
+                    if (deltaZ !== 0) {
+                        panForward(2 * deltaZ * panSpeed, scope.object.matrix);
+                    }
+        
+                } else if (scope.object.isOrthographicCamera) {
                     // orthographic
-                    panLeft( deltaX * ( scope.object.right - scope.object.left ) /
-                                        scope.object.zoom / element.clientWidth, scope.object.matrix );
-                    panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom /
-                                      element.clientHeight, scope.object.matrix );
-
+                    panLeft(deltaX * (scope.object.right - scope.object.left) /
+                            scope.object.zoom / element.clientWidth, scope.object.matrix);
+                    panUp(deltaY * (scope.object.top - scope.object.bottom) / scope.object.zoom /
+                          element.clientHeight, scope.object.matrix);
+                    
+                    if (deltaZ !== 0) {
+                        // Approximate forward/backward for orthographic camera
+                        // Scale is based on the average of width and height scaling
+                        const avgScale = ((scope.object.right - scope.object.left) / element.clientWidth +
+                                      (scope.object.top - scope.object.bottom) / element.clientHeight) / 2;
+                        panForward(deltaZ * avgScale / scope.object.zoom, scope.object.matrix);
+                    }
                 } else {
-
                     // camera neither orthographic nor perspective
-                    console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.' );
+                    console.warn('WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.');
                     scope.enablePan = false;
-
                 }
-
             };
-
         }();
+        
 
         function dollyOut( dollyScale ) {
 
@@ -756,85 +782,85 @@ class OrbitControls extends EventDispatcher {
 
         }
 
-        function handleKeyDown( event ) {
+        // Add this to track pressed keys
+        const keysPressed = {};
+        let animationFrameId = null;
 
-            let needsUpdate = false;
-
-            switch ( event.code ) {
-
-                case scope.keys.UP:
-
-                    if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
-
-                        rotateUp( 2 * Math.PI * scope.rotateSpeed / scope.domElement.clientHeight );
-
-                    } else {
-
-                        pan( 0, scope.keyPanSpeed );
-
-                    }
-
-                    needsUpdate = true;
-                    break;
-
-                case scope.keys.BOTTOM:
-
-                    if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
-
-                        rotateUp( - 2 * Math.PI * scope.rotateSpeed / scope.domElement.clientHeight );
-
-                    } else {
-
-                        pan( 0, - scope.keyPanSpeed );
-
-                    }
-
-                    needsUpdate = true;
-                    break;
-
-                case scope.keys.LEFT:
-
-                    if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
-
-                        rotateLeft( 2 * Math.PI * scope.rotateSpeed / scope.domElement.clientHeight );
-
-                    } else {
-
-                        pan( scope.keyPanSpeed, 0 );
-
-                    }
-
-                    needsUpdate = true;
-                    break;
-
-                case scope.keys.RIGHT:
-
-                    if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
-
-                        rotateLeft( - 2 * Math.PI * scope.rotateSpeed / scope.domElement.clientHeight );
-
-                    } else {
-
-                        pan( - scope.keyPanSpeed, 0 );
-
-                    }
-
-                    needsUpdate = true;
-                    break;
-
+        function handleKeyDown(event) {
+            keysPressed[event.code] = true;
+            
+            // Start animation loop if not already running
+            if (animationFrameId === null) {
+                animationFrameId = requestAnimationFrame(updateMovement);
             }
-
-            if ( needsUpdate ) {
-
-                // prevent the browser from scrolling on cursor keys
-                event.preventDefault();
-
-                scope.update();
-
-            }
-
-
+            
+            event.preventDefault();
         }
+
+        function handleKeyUp(event) {
+            keysPressed[event.code] = false;
+            
+            // Check if any movement keys are still pressed
+            const anyKeysPressed = [
+                scope.keys.UP, 
+                scope.keys.BOTTOM, 
+                scope.keys.LEFT, 
+                scope.keys.RIGHT,
+                scope.keys.FORWARD,
+                scope.keys.BACKWARD
+            ].some(key => keysPressed[key]);
+            
+            // If no movement keys are pressed, stop the animation loop
+            if (!anyKeysPressed && animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        function updateMovement() {
+            let needsUpdate = false;
+            
+            // Check each key and apply movement
+            if (keysPressed[scope.keys.UP]) {
+                pan(0, scope.keyPanSpeed);
+                needsUpdate = true;
+            }
+            
+            if (keysPressed[scope.keys.BOTTOM]) {
+                pan(0, -scope.keyPanSpeed);
+                needsUpdate = true;
+            }
+            
+            if (keysPressed[scope.keys.LEFT]) {
+                pan(scope.keyPanSpeed, 0);
+                needsUpdate = true;
+            }
+            
+            if (keysPressed[scope.keys.RIGHT]) {
+                pan(-scope.keyPanSpeed, 0);
+                needsUpdate = true;
+            }
+            
+            if (keysPressed[scope.keys.FORWARD]) {
+                pan(0, 0, -1.5 * scope.keyPanSpeed);
+                needsUpdate = true;
+            }
+            
+            if (keysPressed[scope.keys.BACKWARD]) {
+                pan(0, 0, 1.5 * scope.keyPanSpeed);
+                needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+                scope.update();
+            }
+            
+            // Continue the animation loop
+            if (animationFrameId !== null) {
+                animationFrameId = requestAnimationFrame(updateMovement);
+            }
+        }
+
 
         function handleTouchStartRotate() {
 
@@ -1202,6 +1228,14 @@ class OrbitControls extends EventDispatcher {
             if ( scope.enabled === false || scope.enablePan === false ) return;
 
             handleKeyDown( event );
+
+        }
+
+        function onKeyUp( event ) {
+
+            if ( scope.enabled === false || scope.enablePan === false ) return;
+
+            handleKeyUp( event );
 
         }
 
