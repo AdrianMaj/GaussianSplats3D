@@ -28,6 +28,7 @@ import { SceneRevealMode } from './SceneRevealMode.js';
 import { SplatRenderMode } from './SplatRenderMode.js';
 import { GSVisionLogo } from './ui/GSVisionLogo.js';
 import { Controls } from './ui/Controls.js';
+import { Presets } from './ui/Presets.js';
 
 const THREE_CAMERA_FOV = 50;
 const MINIMUM_DISTANCE_TO_NEW_FOCAL_POINT = .75;
@@ -341,13 +342,14 @@ export class Viewer {
         this.infoPanel = new InfoPanel(this.rootElement || document.body);
         this.infoPanel.hide();
         this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
-        this.controls = new Controls(this.rootElement || document.body, false);
+        this.controlsUI = new Controls(this.rootElement || document.body, false);
+        this.presetsUI = new Presets(this.rootElement || document.body, {});
 
         this.usingExternalCamera = (this.dropInMode || this.camera) ? true : false;
         this.usingExternalRenderer = (this.dropInMode || this.renderer) ? true : false;
 
         this.initialized = false;
-        this.disposing = false;
+        this.disposing = false;1
         this.disposed = false;
         this.disposePromise = null;
         if (!this.dropInMode) this.init();
