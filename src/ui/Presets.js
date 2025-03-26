@@ -37,7 +37,7 @@ export class Presets {
                 key: `Digit${index + 1}`,
                 label: `${preset?.label ?? index + 1}`,
             };
-        });a
+        });
         
         // Create the preset buttons layout in a single row
         let buttonsHTML = '';
