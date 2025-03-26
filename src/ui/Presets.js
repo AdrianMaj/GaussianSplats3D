@@ -21,15 +21,8 @@ export class Presets {
         this.controlsElement.className = 'preset-controls-panel';
         this.controlsElement.style.display = options.hide ? 'none' : 'flex';
         
-        // If no presets provided, create default numbered presets 1-9
         if (this.presets.length === 0) {
-            for (let i = 1; i <= 9; i++) {
-                this.presets.push({
-                    id: i,
-                    key: `Digit${i}`,
-                    label: `${i}`
-                });
-            }
+            return;
         }
         
         // Limit to maximum 9 presets

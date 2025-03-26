@@ -361,6 +361,8 @@ export class Viewer {
 
         this.orbitAroundFocalPoint = options.orbitAroundFocalPoint || true;
 
+        this.setupControlsIntegration();
+
         if (!this.dropInMode) this.init();
     }
 
@@ -618,7 +620,7 @@ export class Viewer {
         const forward = new THREE.Vector3();
         const tempMatrixLeft = new THREE.Matrix4();
         const tempMatrixRight = new THREE.Matrix4();
-
+    
         return function(e) {
             forward.set(0, 0, -1);
             forward.transformDirection(this.camera.matrixWorld);
@@ -652,15 +654,21 @@ export class Viewer {
                     } else {
                         this.infoPanel.hide();
                     }
+                    // Update UI toggle state
+                    if (this.controlsUI) this.controlsUI.updateToggleState('KeyI', this.showInfo);
                 break;
                 case 'KeyO':
                     if (!this.usingExternalCamera) {
                         this.setOrthographicMode(!this.camera.isOrthographicCamera);
+                        // Update UI toggle state
+                        if (this.controlsUI) this.controlsUI.updateToggleState('KeyO', this.camera.isOrthographicCamera);
                     }
                 break;
                 case 'KeyP':
                     if (!this.usingExternalCamera) {
                         this.splatMesh.setPointCloudModeEnabled(!this.splatMesh.getPointCloudModeEnabled());
+                        // Update UI toggle state
+                        if (this.controlsUI) this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnabled());
                     }
                 break;
                 case 'Equal':
@@ -675,14 +683,37 @@ export class Viewer {
                 break;
                 case 'KeyZ':
                     this.toggleOrbitMode();
+                    // Update UI toggle state
+                    if (this.controlsUI) this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
                 break;
             }
         };
-
+    
     }();
 
     onMouseMove(mouse) {
         this.mousePosition.set(mouse.offsetX, mouse.offsetY);
+    }
+
+    setupControlsIntegration() {
+        if (!this.controlsUI) return;
+
+        // Initial states - only set if the relevant properties exist
+        if (this.orbitAroundFocalPoint !== undefined) {
+            this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
+        }
+        
+        if (this.camera) {
+            this.controlsUI.updateToggleState('KeyO', this.camera.isOrthographicCamera);
+        }
+        
+        if (this.splatMesh && typeof this.splatMesh.getPointCloudModeEnabled === 'function') {
+            this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnabled());
+        }
+        
+        if (this.showInfo !== undefined) {
+            this.controlsUI.updateToggleState('KeyI', this.showInfo);
+        }
     }
 
     onMouseDown() {
