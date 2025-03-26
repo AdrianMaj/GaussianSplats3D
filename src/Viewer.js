@@ -80,7 +80,7 @@ const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
  * @property {string} [barColor="#FFFFFF"] - Color for progress bar
  * @property {string} [mask] - URL to mask image for progress bar
  * @property {boolean} [orbitAroundFocalPoint=true] - Enable orbiting around the focal point by default
- * @property {{lookAt: number[], position: number[]}[]} [presets] - Array of preset configurations
+ * @property {{lookAt: number[], position: number[], label?: string}[]} [presets] - Array of preset configurations
  */
 
 /**
@@ -359,7 +359,7 @@ export class Viewer {
         this.presetsUI = new Presets(this.rootElement || document.body, { presets: options.presets, onPresetSelected: this.onPresetSelected.bind(this)});
         this.presetsUI.hide();
 
-        this.orbitAroundFocalPoint = options.orbitAroundFocalPoint || true;
+        this.orbitAroundFocalPoint = options.orbitAroundFocalPoint !== undefined ? options.orbitAroundFocalPoint : true;
 
         this.setupControlsIntegration();
 
@@ -447,9 +447,17 @@ export class Viewer {
         this.orbitAroundFocalPoint = !this.orbitAroundFocalPoint;
         console.log(`Orbit around focal point: ${this.orbitAroundFocalPoint ? 'enabled' : 'disabled'}`);
         
-        // When turning off the focal point mode, we need to tell OrbitControls
-        if (this.controls) {
-            this.controls.enableFocalPointOrbit = this.orbitAroundFocalPoint;
+        // Update both the perspective and orthographic OrbitControls
+        if (this.perspectiveControls) {
+            this.perspectiveControls.setFocalPointOrbitMode(this.orbitAroundFocalPoint);
+        }
+        if (this.orthographicControls) {
+            this.orthographicControls.setFocalPointOrbitMode(this.orbitAroundFocalPoint);
+        }
+        
+        // Update the UI control state
+        if (this.controlsUI) {
+            this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
         }
     }
 

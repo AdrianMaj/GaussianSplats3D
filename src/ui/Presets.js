@@ -19,11 +19,15 @@ export class Presets {
         // Create controls container
         this.controlsElement = document.createElement('div');
         this.controlsElement.className = 'preset-controls-panel';
-        this.controlsElement.style.display = options.hide ? 'none' : 'flex';
         
+        // If no presets, don't create the UI
         if (this.presets.length === 0) {
+            // Just create the element but don't append it to the container
             return;
         }
+        
+        // Set initial display state
+        this.controlsElement.style.display = options.hide ? 'none' : 'flex';
         
         // Limit to maximum 9 presets
         this.presets = this.presets.slice(0, 9).map((preset, index) => {
@@ -33,7 +37,7 @@ export class Presets {
                 key: `Digit${index + 1}`,
                 label: `${preset?.label ?? index + 1}`,
             };
-        });
+        });a
         
         // Create the preset buttons layout in a single row
         let buttonsHTML = '';
@@ -128,6 +132,9 @@ export class Presets {
      * Set up keyboard and click event listeners
      */
     setupEventListeners() {
+        // If no presets, don't set up listeners
+        if (this.presets.length === 0) return;
+        
         // Don't set up keyboard listeners if on mobile
         if (!this.isMobile) {
             // Keydown event - highlight key and trigger preset
@@ -148,6 +155,9 @@ export class Presets {
      * Handle keydown event
      */
     handleKeyDown(event) {
+        // If no presets, don't handle events
+        if (this.presets.length === 0) return;
+        
         // Find preset that matches the pressed key
         const presetIndex = this.presets.findIndex(preset => preset.key === event.code);
         
@@ -165,6 +175,9 @@ export class Presets {
      * Handle keyup event
      */
     handleKeyUp(event) {
+        // If no presets, don't handle events
+        if (this.presets.length === 0) return;
+        
         // Find preset that matches the released key
         const presetIndex = this.presets.findIndex(preset => preset.key === event.code);
         
@@ -197,6 +210,9 @@ export class Presets {
      * Update the visual highlighting of buttons based on pressed state
      */
     updateHighlights() {
+        // If no presets, don't update highlights
+        if (this.presets.length === 0) return;
+        
         // Get all button elements
         const buttonElements = this.controlsElement.querySelectorAll('.preset-button');
         
@@ -227,34 +243,41 @@ export class Presets {
     }
     
     /**
-     * Show the controls
+     * Show the controls - only if there are presets
      */
     show() {
-        this.controlsElement.style.display = 'flex';
+        if (this.presets.length > 0 && this.controlsElement) {
+            this.controlsElement.style.display = 'flex';
+        }
     }
     
     /**
      * Hide the controls
      */
     hide() {
-        this.controlsElement.style.display = 'none';
+        if (this.controlsElement) {
+            this.controlsElement.style.display = 'none';
+        }
     }
     
     /**
      * Remove the component and clean up event listeners
      */
     dispose() {
-        document.removeEventListener('keydown', this.handleKeyDown);
-        document.removeEventListener('keyup', this.handleKeyUp);
-        
-        // Remove click listeners
-        const buttons = this.controlsElement.querySelectorAll('.preset-button');
-        buttons.forEach(button => {
-            button.removeEventListener('click', this.handleButtonClick);
-        });
-        
-        if (this.controlsElement.parentNode) {
-            this.container.removeChild(this.controlsElement);
+        // Only clean up if we have presets
+        if (this.presets.length > 0) {
+            document.removeEventListener('keydown', this.handleKeyDown);
+            document.removeEventListener('keyup', this.handleKeyUp);
+            
+            // Remove click listeners
+            const buttons = this.controlsElement.querySelectorAll('.preset-button');
+            buttons.forEach(button => {
+                button.removeEventListener('click', this.handleButtonClick);
+            });
+            
+            if (this.controlsElement && this.controlsElement.parentNode) {
+                this.container.removeChild(this.controlsElement);
+            }
         }
     }
 }

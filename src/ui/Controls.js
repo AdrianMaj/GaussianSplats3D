@@ -184,8 +184,12 @@ export class Controls {
                     this.toggleStates[keyCode] = !this.toggleStates[keyCode];
                     this.updateToggleKeys();
                     // Simulate a key press to trigger the viewer's handlers
-                    const event = new KeyboardEvent('keydown', { code: keyCode });
-                    document.dispatchEvent(event);
+                    const keyEvent = new KeyboardEvent('keydown', { 
+                        code: keyCode,
+                        key: key.textContent.toLowerCase(),
+                        bubbles: true
+                    });
+                    document.dispatchEvent(keyEvent);
                 }
             });
         });
