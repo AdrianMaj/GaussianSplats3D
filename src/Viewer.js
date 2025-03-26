@@ -79,6 +79,8 @@ const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
  * @property {string} [backgroundColor="#000000"] - Background color
  * @property {string} [barColor="#FFFFFF"] - Color for progress bar
  * @property {string} [mask] - URL to mask image for progress bar
+ * @property {boolean} [orbitAroundFocalPoint=true] - Enable orbiting around the focal point by default
+ * @property {{lookAt: number[], position: number[]}[]} [presets] - Array of preset configurations
  */
 
 /**
@@ -341,9 +343,6 @@ export class Viewer {
         this.loadingProgressBar.hide();
         this.infoPanel = new InfoPanel(this.rootElement || document.body);
         this.infoPanel.hide();
-        this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
-        this.controlsUI = new Controls(this.rootElement || document.body, false);
-        this.presetsUI = new Presets(this.rootElement || document.body, {});
 
         this.usingExternalCamera = (this.dropInMode || this.camera) ? true : false;
         this.usingExternalRenderer = (this.dropInMode || this.renderer) ? true : false;
@@ -352,7 +351,85 @@ export class Viewer {
         this.disposing = false;1
         this.disposed = false;
         this.disposePromise = null;
+
+
+        this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
+        this.controlsUI = new Controls(this.rootElement || document.body, false);
+        this.controlsUI.hide();
+        this.presetsUI = new Presets(this.rootElement || document.body, { presets: options.presets, onPresetSelected: this.onPresetSelected.bind(this)});
+        this.presetsUI.hide();
+
+        this.orbitAroundFocalPoint = options.orbitAroundFocalPoint || true;
+
         if (!this.dropInMode) this.init();
+    }
+
+    /**
+     * @param {{lookAt: number[]; position: number[]}} preset - The preset to apply
+     */
+    onPresetSelected(preset) {
+        // Don't animate if already animating
+        if (this.isPresetAnimating) return;
+        
+        // Create target vectors from the preset
+        const targetPosition = new THREE.Vector3().fromArray(preset.position);
+        const targetLookAt = new THREE.Vector3().fromArray(preset.lookAt);
+        
+        // Store initial camera state
+        const startPosition = this.camera.position.clone();
+        const startTarget = this.controls.target.clone();
+        
+        // Use a fixed number of steps instead of time-based animation
+        const totalSteps = 40;
+        let currentStep = 0;
+        
+        // Set flag to prevent overlapping animations
+        this.isPresetAnimating = true;
+        
+        // Helper for smoother easing
+        const easeOutQuad = t => 1 - (1 - t) * (1 - t);
+        
+        // If there's an existing timer, clear it
+        if (this.presetAnimationTimer) {
+            clearInterval(this.presetAnimationTimer);
+        }
+        
+        // Use setInterval for more consistent timing
+        this.presetAnimationTimer = setInterval(() => {
+            // Advance to next step
+            currentStep++;
+            
+            // Calculate progress with easing
+            const progress = easeOutQuad(currentStep / totalSteps);
+            
+            // Interpolate camera position
+            this.camera.position.lerpVectors(startPosition, targetPosition, progress);
+            
+            // Interpolate target (look at point)
+            this.controls.target.lerpVectors(startTarget, targetLookAt, progress);
+            
+            // Make sure camera is looking at the target
+            this.camera.lookAt(this.controls.target);
+            
+            // Update controls
+            this.controls.update();
+            
+            // Force render
+            this.forceRenderNextFrame();
+            
+            // End animation when complete
+            if (currentStep >= totalSteps) {
+                clearInterval(this.presetAnimationTimer);
+                this.presetAnimationTimer = null;
+                this.isPresetAnimating = false;
+                
+                // Ensure final position is exactly as specified
+                this.camera.position.copy(targetPosition);
+                this.controls.target.copy(targetLookAt);
+                this.camera.lookAt(this.controls.target);
+                this.controls.update();
+            }
+        }, 16); // ~60fps timing but with fixed intervals
     }
 
     createSplatMesh() {
@@ -362,6 +439,16 @@ export class Viewer {
                                        this.sphericalHarmonicsDegree, this.sceneFadeInRateMultiplier, this.kernel2DSize);
         this.splatMesh.frustumCulled = false;
         if (this.onSplatMeshChangedCallback) this.onSplatMeshChangedCallback();
+    }
+
+    toggleOrbitMode() {
+        this.orbitAroundFocalPoint = !this.orbitAroundFocalPoint;
+        console.log(`Orbit around focal point: ${this.orbitAroundFocalPoint ? 'enabled' : 'disabled'}`);
+        
+        // When turning off the focal point mode, we need to tell OrbitControls
+        if (this.controls) {
+            this.controls.enableFocalPointOrbit = this.orbitAroundFocalPoint;
+        }
     }
 
     init() {
@@ -478,6 +565,7 @@ export class Viewer {
                     controls.enableDamping = true;
                     controls.dampingFactor = 0.05;
                     controls.target.copy(this.initialCameraLookAt);
+                    controls.enableFocalPointOrbit = this.orbitAroundFocalPoint;
                     controls.update();
                 }
             }
@@ -585,6 +673,9 @@ export class Viewer {
                         this.splatMesh.setSplatScale(Math.max(this.splatMesh.getSplatScale() - 0.05, 0.0));
                     }
                 break;
+                case 'KeyZ':
+                    this.toggleOrbitMode();
+                break;
             }
         };
 
@@ -626,6 +717,8 @@ export class Viewer {
         const outHits = [];
 
         return function() {
+            if (!this.orbitAroundFocalPoint) return;
+
             if (!this.transitioningCameraTarget) {
                 this.getRenderDimensions(renderDimensions);
                 outHits.length = 0;
@@ -1221,6 +1314,8 @@ export class Viewer {
                                     }
                                     this.runAfterNextSort.push(() => {
                                         removeSplatProcessingTask();
+                                        this.controlsUI.show();
+                                        this.presetsUI.show();
                                         resolve();
                                     });
                                 }

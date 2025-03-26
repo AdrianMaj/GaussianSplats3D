@@ -188,6 +188,8 @@ class OrbitControls extends EventDispatcher {
             panOffset.set(0, 0, 0);
         };
 
+        this.enableFocalPointOrbit = true;
+
         // this method is exposed, but perhaps it would be better if we can make it private...
         this.update = function() {
 
@@ -269,14 +271,27 @@ class OrbitControls extends EventDispatcher {
 
                 // move target to panned location
 
-                if ( scope.enableDamping === true ) {
-
-                    scope.target.addScaledVector( panOffset, scope.dampingFactor );
-
+                if (scope.enableFocalPointOrbit) {
+                    // Use original behavior - apply pan to target
+                    if (scope.enableDamping === true) {
+                        scope.target.addScaledVector(panOffset, scope.dampingFactor);
+                    } else {
+                        scope.target.add(panOffset);
+                    }
                 } else {
-
-                    scope.target.add( panOffset );
-
+                    // In free mode, don't move the target with panning
+                    // Instead, maintain a fixed distance from camera to target
+                    // First, apply the pan to the camera position
+                    if (scope.enableDamping === true) {
+                        position.addScaledVector(panOffset, scope.dampingFactor);
+                    } else {
+                        position.add(panOffset);
+                    }
+                    
+                    // Then update the target to keep it at a fixed distance in front of camera
+                    scope.target.copy(position).add(
+                        new Vector3(0, 0, -offset.length()).applyQuaternion(scope.object.quaternion)
+                    );
                 }
 
                 // adjust the camera position based on zoom only if we're not zooming to the cursor or if it's an ortho camera
@@ -454,6 +469,10 @@ class OrbitControls extends EventDispatcher {
 
             }
 
+        };
+
+        this.setFocalPointOrbitMode = function(enabled) {
+            this.enableFocalPointOrbit = enabled;
         };
 
         //

@@ -4,7 +4,7 @@ export class Presets {
      * @param {HTMLElement} container - The container to append the controls to
      * @param {Object} options - Configuration options
      * @param {boolean} [options.hide=false] - Whether to hide the controls initially
-     * @param {Array} [options.presets=[]] - Array of preset configurations
+     * @param {[{label?: string; lookAt: number[]; position: number[];}]} [options.presets=[]] - Array of preset configurations
      * @param {Function} [options.onPresetSelected] - Callback when preset is selected
      */
     constructor(container, options = {}) {
@@ -33,7 +33,14 @@ export class Presets {
         }
         
         // Limit to maximum 9 presets
-        this.presets = this.presets.slice(0, 9);
+        this.presets = this.presets.slice(0, 9).map((preset, index) => {
+            return {
+                ...preset,
+                id: index + 1,
+                key: `Digit${index + 1}`,
+                label: `${preset?.label ?? index + 1}`,
+            };
+        });
         
         // Create the preset buttons layout in a single row
         let buttonsHTML = '';
