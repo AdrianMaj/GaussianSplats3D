@@ -6,10 +6,7 @@ export class GSVisionLogo {
      * @param {boolean} hideAttribution - Whether to hide the logo or not
      */
     constructor(container, hideAttribution) {
-
         this.idGen = 1;
-
-
         this.container = container || document.body;
 
         this.gsVisionLogoElement = document.createElement('div');
@@ -29,8 +26,6 @@ export class GSVisionLogo {
         this.gsVisionLogoElement.className = 'gsVisionLogo';
         this.gsVisionLogoElement.style.display = hideAttribution ? 'none' : 'flex';
 
-
-
         const style = document.createElement('style');
         style.innerHTML = `
             .gsVisionLogo{
@@ -47,5 +42,23 @@ export class GSVisionLogo {
         `;
         this.gsVisionLogoElement.appendChild(style);
         this.container.appendChild(this.gsVisionLogoElement);
+    }
+
+    /**
+     * Show the logo
+     */
+    show() {
+        if (this.gsVisionLogoElement) {
+            this.gsVisionLogoElement.style.display = 'flex';
+        }
+    }
+
+    /**
+     * Hide the logo
+     */
+    hide() {
+        if (this.gsVisionLogoElement) {
+            this.gsVisionLogoElement.style.display = 'none';
+        }
     }
 }

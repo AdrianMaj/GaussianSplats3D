@@ -21,6 +21,10 @@ export class InfoPanel {
             ['Point cloud mode', 'pointCloudMode']
         ];
 
+        const staticLayout = [
+            ["Toggle UI", "F1 Key"]
+        ]
+
         this.infoPanelContainer = document.createElement('div');
         const style = document.createElement('style');
         style.innerHTML = `
@@ -85,6 +89,34 @@ export class InfoPanel {
             infoCell.className = 'info-panel-cell';
 
             this.infoCells[layoutEntry[1]] = infoCell;
+
+            row.appendChild(labelCell);
+            row.appendChild(spacerCell);
+            row.appendChild(infoCell);
+
+            infoTable.appendChild(row);
+        }
+
+        for(let staticLayoutEntry of staticLayout) {
+            const row = document.createElement('div');
+            row.style.display = 'table-row';
+            row.className = 'info-panel-row';
+
+            const labelCell = document.createElement('div');
+            labelCell.style.display = 'table-cell';
+            labelCell.innerHTML = `${staticLayoutEntry[0]}: `;
+            labelCell.classList.add('info-panel-cell', 'label-cell');
+
+            const spacerCell = document.createElement('div');
+            spacerCell.style.display = 'table-cell';
+            spacerCell.style.width = '10px';
+            spacerCell.innerHTML = ' ';
+            spacerCell.className = 'info-panel-cell';
+
+            const infoCell = document.createElement('div');
+            infoCell.style.display = 'table-cell';
+            infoCell.innerHTML = `${staticLayoutEntry[1]}`;
+            infoCell.className = 'info-panel-cell';
 
             row.appendChild(labelCell);
             row.appendChild(spacerCell);

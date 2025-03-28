@@ -81,6 +81,8 @@ const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
  * @property {string} [mask] - URL to mask image for progress bar
  * @property {boolean} [orbitAroundFocalPoint=true] - Enable orbiting around the focal point by default
  * @property {{lookAt: number[], position: number[], label?: string}[]} [presets] - Array of preset configurations
+ * @property {"admin"|"user"} [role="user"] - Role of the user
+ * @property {Function} [onUpdate] - Callback function for when a preset is updated, takes presests array.
  */
 
 /**
@@ -356,8 +358,10 @@ export class Viewer {
         this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
         this.controlsUI = new Controls(this.rootElement || document.body, false);
         this.controlsUI.hide();
-        this.presetsUI = new Presets(this.rootElement || document.body, { presets: options.presets, onPresetSelected: this.onPresetSelected.bind(this)});
+        this.presetsUI = new Presets(this.rootElement || document.body, { presets: options.presets, onPresetSelected: this.onPresetSelected.bind(this), role: options.role ?? "user", onUpdate: options.onUpdate});
         this.presetsUI.hide();
+
+        this._uiVisible = undefined;
 
         this.orbitAroundFocalPoint = options.orbitAroundFocalPoint !== undefined ? options.orbitAroundFocalPoint : true;
 
@@ -365,6 +369,7 @@ export class Viewer {
 
         if (!this.dropInMode) this.init();
     }
+
 
     /**
      * @param {{lookAt: number[]; position: number[]}} preset - The preset to apply
@@ -491,6 +496,16 @@ export class Viewer {
         this.loadingSpinner.setContainer(this.rootElement);
         this.infoPanel.setContainer(this.rootElement);
 
+        document.addEventListener('request-camera-state', (event) => {
+            const callback = event.detail.callback;
+            if (callback && typeof callback === 'function') {
+                // Get current camera position and target as arrays
+                const position = this.camera.position.toArray();
+                const lookAt = this.controls.target.toArray();
+                callback(position, lookAt);
+            }
+        });
+
         this.initialized = true;
     }
 
@@ -508,6 +523,7 @@ export class Viewer {
             this.camera.lookAt(this.initialCameraLookAt);
         }
     }
+    
 
     setupRenderer() {
         if (!this.usingExternalRenderer) {
@@ -623,6 +639,31 @@ export class Viewer {
         this.onSplatMeshChangedCallback = callback;
     }
 
+    toggleUIVisibility() {
+        this._uiVisible = this._uiVisible === undefined ? false : !this._uiVisible;
+        
+        // Hide/show all UI components
+        if (this.controlsUI) {
+            this._uiVisible ? this.controlsUI.show() : this.controlsUI.hide();
+        }
+        
+        if (this.presetsUI) {
+            this._uiVisible ? this.presetsUI.show() : this.presetsUI.hide();
+        }
+        
+        if (this.gsVisionLogo) {
+            // Now we can use the show/hide methods
+            this._uiVisible ? this.gsVisionLogo.show() : this.gsVisionLogo.hide();
+        }
+        
+        // if (this.infoPanel) {
+        //     this._uiVisible ? this.infoPanel.show() : this.infoPanel.hide();
+        // }
+        
+        // Force a render to update the display
+        this.forceRenderNextFrame();
+    }
+
     onKeyDown = function() {
 
         const forward = new THREE.Vector3();
@@ -694,6 +735,11 @@ export class Viewer {
                     // Update UI toggle state
                     if (this.controlsUI) this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
                 break;
+                case 'F1':
+    
+                    this.toggleUIVisibility();
+                    e.preventDefault(); // Prevent default browser F1 behavior
+                break;  
             }
         };
     
