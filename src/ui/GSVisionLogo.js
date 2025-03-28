@@ -1,16 +1,15 @@
 export class GSVisionLogo {
+	/**
+	 * This component is responsible for rendering the GS Vision logo in top right corner of the screen
+	 * @param {HTMLElement} container - The container to append the logo to
+	 * @param {boolean} hideAttribution - Whether to hide the logo or not
+	 */
+	constructor(container, hideAttribution) {
+		this.idGen = 1;
+		this.container = container || document.body;
 
-    /**
-     * This component is responsible for rendering the GS Vision logo in top right corner of the screen
-     * @param {HTMLElement} container - The container to append the logo to 
-     * @param {boolean} hideAttribution - Whether to hide the logo or not
-     */
-    constructor(container, hideAttribution) {
-        this.idGen = 1;
-        this.container = container || document.body;
-
-        this.gsVisionLogoElement = document.createElement('div');
-        this.gsVisionLogoElement.innerHTML = `
+		this.gsVisionLogoElement = document.createElement('div');
+		this.gsVisionLogoElement.innerHTML = `
             <svg width="505" height="220" style="height: auto;" viewBox="0 0 505 220" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                 d="M110.273 0.582862C116.166 0.359348 122.432 0.669538 128.305 1.22604C160.819 4.30508 185.141 17.4514 205.91 42.3695C191.162 53.191 177.245 65.1042 162.39 75.8542C155.992 70.1204 149.347 65.1194 141.288 61.9492C126.796 56.2473 108.719 56.8737 94.5584 63.3055C82.7121 68.6865 72.9383 78.4452 68.433 90.7339C63.4822 104.235 64.3261 120.748 70.51 133.714C70.8679 134.454 71.2439 135.185 71.6383 135.907C72.0316 136.629 72.4426 137.34 72.8714 138.042C73.3012 138.743 73.7477 139.434 74.211 140.113C74.6742 140.792 75.1537 141.459 75.6494 142.115C76.1461 142.77 76.6585 143.413 77.1866 144.043C77.7147 144.673 78.258 145.289 78.8166 145.892C79.3751 146.496 79.9483 147.086 80.5363 147.661C81.1242 148.235 81.7258 148.795 82.3411 149.341C82.9564 149.885 83.5849 150.414 84.2266 150.928C84.8682 151.442 85.5225 151.94 86.1895 152.421C86.8555 152.904 87.5332 153.369 88.2225 153.817C88.9118 154.265 89.6117 154.695 90.3223 155.108C91.0329 155.522 91.7536 155.917 92.4844 156.295C93.2143 156.674 93.9533 157.033 94.7014 157.374C95.4495 157.715 96.2056 158.038 96.9699 158.341C97.7332 158.645 98.5042 158.93 99.2827 159.195C112.719 163.714 132.03 163.192 144.685 156.53C153.253 152.02 157.048 144.487 159.799 135.636C143.951 135.357 128.063 135.503 112.212 135.449L112.38 90.3508C138.034 90.6812 163.689 90.7405 189.344 90.5287L227.665 90.5697L227.939 93.5454C230.798 126.013 225.442 157.752 203.821 183.216C184.977 205.406 158.767 216.453 130.062 218.521C96.4271 220.943 61.0433 214.919 34.8799 192.183C13.5791 173.672 2.18775 146.728 0.309619 118.851C-1.63603 89.9707 5.47113 60.0501 24.951 37.9875C47.1155 12.8823 77.6382 2.59754 110.273 0.582862Z"
@@ -23,11 +22,11 @@ export class GSVisionLogo {
                 fill="white" />
             </svg>
         `;
-        this.gsVisionLogoElement.className = 'gsVisionLogo';
-        this.gsVisionLogoElement.style.display = hideAttribution ? 'none' : 'flex';
+		this.gsVisionLogoElement.className = 'gsVisionLogo';
+		this.gsVisionLogoElement.style.display = hideAttribution ? 'none' : 'flex';
 
-        const style = document.createElement('style');
-        style.innerHTML = `
+		const style = document.createElement('style');
+		style.innerHTML = `
             .gsVisionLogo{
                 position: absolute;
                 display: flex;
@@ -40,25 +39,25 @@ export class GSVisionLogo {
                 z-index: 1000;
             }
         `;
-        this.gsVisionLogoElement.appendChild(style);
-        this.container.appendChild(this.gsVisionLogoElement);
-    }
+		this.gsVisionLogoElement.appendChild(style);
+		this.container.appendChild(this.gsVisionLogoElement);
+	}
 
-    /**
-     * Show the logo
-     */
-    show() {
-        if (this.gsVisionLogoElement) {
-            this.gsVisionLogoElement.style.display = 'flex';
-        }
-    }
+	/**
+	 * Show the logo
+	 */
+	show() {
+		if (this.gsVisionLogoElement) {
+			this.gsVisionLogoElement.style.display = 'flex';
+		}
+	}
 
-    /**
-     * Hide the logo
-     */
-    hide() {
-        if (this.gsVisionLogoElement) {
-            this.gsVisionLogoElement.style.display = 'none';
-        }
-    }
+	/**
+	 * Hide the logo
+	 */
+	hide() {
+		if (this.gsVisionLogoElement) {
+			this.gsVisionLogoElement.style.display = 'none';
+		}
+	}
 }

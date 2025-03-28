@@ -1,24 +1,24 @@
 export class Controls {
-    constructor(container, hide) {
-        this.container = container || document.body;
-        this.keysPressed = {};
-        this.toggleStates = {
-            'KeyZ': false, // Orbit mode
-            'KeyO': false, // Orthographic mode
-            'KeyP': false, // Point cloud mode
-            'KeyI': false  // Info panel
-        };
-        
-        // Check if device is mobile or touch-enabled
-        this.isMobileOrTouch = this.detectMobileOrTouch();
-        
-        // Create controls container
-        this.controlsElement = document.createElement('div');
-        this.controlsElement.className = 'controls-panel';
-        this.controlsElement.style.display = hide || this.isMobileOrTouch ? 'none' : 'flex';
-        
-        // Create the key layout
-        this.controlsElement.innerHTML = `
+	constructor(container, hide) {
+		this.container = container || document.body;
+		this.keysPressed = {};
+		this.toggleStates = {
+			KeyZ: false, // Orbit mode
+			KeyO: false, // Orthographic mode
+			KeyP: false, // Point cloud mode
+			KeyI: false, // Info panel
+		};
+
+		// Check if device is mobile or touch-enabled
+		this.isMobileOrTouch = this.detectMobileOrTouch();
+
+		// Create controls container
+		this.controlsElement = document.createElement('div');
+		this.controlsElement.className = 'controls-panel';
+		this.controlsElement.style.display = hide || this.isMobileOrTouch ? 'none' : 'flex';
+
+		// Create the key layout
+		this.controlsElement.innerHTML = `
             <div class="controls-row">
                 <div class="key-container">
                     <div class="key" data-key="KeyQ">Q</div>
@@ -60,10 +60,10 @@ export class Controls {
                 </div>
             </div>
         `;
-        
-        // Add styles
-        const style = document.createElement('style');
-        style.innerHTML = `
+
+		// Add styles
+		const style = document.createElement('style');
+		style.innerHTML = `
             .controls-panel {
                 position: absolute;
                 display: flex;
@@ -145,149 +145,151 @@ export class Controls {
                 text-align: center;
             }
         `;
-        
-        this.controlsElement.appendChild(style);
-        this.container.appendChild(this.controlsElement);
-        
-        // Set up event listeners
-        this.setupKeyListeners();
-    }
-    
-    /**
-     * Set up keyboard event listeners to highlight pressed keys
-     */
-    setupKeyListeners() {
-        // Don't set up listeners if on mobile/touch
-        if (this.isMobileOrTouch) return;
-        
-        // Store bound handlers to use in disposal
-        this.keydownHandler = (event) => {
-            this.keysPressed[event.code] = true;
-            this.updateKeyHighlights();
-        };
-        
-        this.keyupHandler = (event) => {
-            this.keysPressed[event.code] = false;
-            this.updateKeyHighlights();
-        };
-        
-        // Add event listeners
-        document.addEventListener('keydown', this.keydownHandler);
-        document.addEventListener('keyup', this.keyupHandler);
-        
-        // Add click handlers for toggle keys
-        const toggleKeys = this.controlsElement.querySelectorAll('.toggle-key');
-        toggleKeys.forEach(key => {
-            key.addEventListener('click', () => {
-                const keyCode = key.getAttribute('data-key');
-                if (this.toggleStates.hasOwnProperty(keyCode)) {
-                    this.toggleStates[keyCode] = !this.toggleStates[keyCode];
-                    this.updateToggleKeys();
-                    // Simulate a key press to trigger the viewer's handlers
-                    const keyEvent = new KeyboardEvent('keydown', { 
-                        code: keyCode,
-                        key: key.textContent.toLowerCase(),
-                        bubbles: true
-                    });
-                    document.dispatchEvent(keyEvent);
-                }
-            });
-        });
-    }
-    
-    /**
-     * Update the toggle states from external changes
-     */
-    updateToggleState(keyCode, state) {
-        if (this.toggleStates.hasOwnProperty(keyCode)) {
-            this.toggleStates[keyCode] = state;
-            this.updateToggleKeys();
-        }
-    }
-    
-    /**
-     * Update the visual highlighting of keys based on pressed state
-     */
-    updateKeyHighlights() {
-        // Get all regular key elements
-        const keyElements = this.controlsElement.querySelectorAll('.key:not([data-toggle="true"])');
-        
-        // Update each key's appearance
-        keyElements.forEach(key => {
-            const keyCode = key.getAttribute('data-key');
-            if (this.keysPressed[keyCode]) {
-                key.classList.add('pressed');
-            } else {
-                key.classList.remove('pressed');
-            }
-        });
-    }
-    
-    /**
-     * Update the visual state of toggle keys
-     */
-    updateToggleKeys() {
-        // Get all toggle key elements
-        const toggleKeyElements = this.controlsElement.querySelectorAll('.toggle-key');
-        
-        // Update each toggle key's appearance
-        toggleKeyElements.forEach(key => {
-            const keyCode = key.getAttribute('data-key');
-            if (this.toggleStates[keyCode]) {
-                key.classList.add('toggled');
-            } else {
-                key.classList.remove('toggled');
-            }
-        });
-    }
-    
-    /**
-     * Show the controls (only if not on mobile/touch device)
-     */
-    show() {
-        if (!this.isMobileOrTouch) {
-            this.controlsElement.style.display = 'flex';
-        }
-    }
-    
-    /**
-     * Hide the controls
-     */
-    hide() {
-        this.controlsElement.style.display = 'none';
-    }
-    
-    /**
-     * Detect if device is a mobile device (phone/tablet)
-     * @returns {boolean} True if mobile device
-     */
-    detectMobileOrTouch() {
-        // Check if it's a mobile device based on user agent
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        // Check screen size - typical cutoff for tablets is around 768px width
-        const isSmallScreen = window.innerWidth <= 1024; 
-        
-        // Only hide on mobile devices, not just any touch-enabled device
-        return isMobile && isSmallScreen;
-    }
-    
-    /**
-     * Remove the component and clean up event listeners
-     */
-    dispose() {
-        if (this.keydownHandler) {
-            document.removeEventListener('keydown', this.keydownHandler);
-            this.keydownHandler = null;
-        }
-        
-        if (this.keyupHandler) {
-            document.removeEventListener('keyup', this.keyupHandler);
-            this.keyupHandler = null;
-        }
-        
-        if (this.controlsElement.parentNode) {
-            this.container.removeChild(this.controlsElement);
-        }
-    }
+
+		this.controlsElement.appendChild(style);
+		this.container.appendChild(this.controlsElement);
+
+		// Set up event listeners
+		this.setupKeyListeners();
+	}
+
+	/**
+	 * Set up keyboard event listeners to highlight pressed keys
+	 */
+	setupKeyListeners() {
+		// Don't set up listeners if on mobile/touch
+		if (this.isMobileOrTouch) return;
+
+		// Store bound handlers to use in disposal
+		this.keydownHandler = (event) => {
+			this.keysPressed[event.code] = true;
+			this.updateKeyHighlights();
+		};
+
+		this.keyupHandler = (event) => {
+			this.keysPressed[event.code] = false;
+			this.updateKeyHighlights();
+		};
+
+		// Add event listeners
+		document.addEventListener('keydown', this.keydownHandler);
+		document.addEventListener('keyup', this.keyupHandler);
+
+		// Add click handlers for toggle keys
+		const toggleKeys = this.controlsElement.querySelectorAll('.toggle-key');
+		toggleKeys.forEach((key) => {
+			key.addEventListener('click', () => {
+				const keyCode = key.getAttribute('data-key');
+				if (this.toggleStates.hasOwnProperty(keyCode)) {
+					this.toggleStates[keyCode] = !this.toggleStates[keyCode];
+					this.updateToggleKeys();
+					// Simulate a key press to trigger the viewer's handlers
+					const keyEvent = new KeyboardEvent('keydown', {
+						code: keyCode,
+						key: key.textContent.toLowerCase(),
+						bubbles: true,
+					});
+					document.dispatchEvent(keyEvent);
+				}
+			});
+		});
+	}
+
+	/**
+	 * Update the toggle states from external changes
+	 */
+	updateToggleState(keyCode, state) {
+		if (this.toggleStates.hasOwnProperty(keyCode)) {
+			this.toggleStates[keyCode] = state;
+			this.updateToggleKeys();
+		}
+	}
+
+	/**
+	 * Update the visual highlighting of keys based on pressed state
+	 */
+	updateKeyHighlights() {
+		// Get all regular key elements
+		const keyElements = this.controlsElement.querySelectorAll('.key:not([data-toggle="true"])');
+
+		// Update each key's appearance
+		keyElements.forEach((key) => {
+			const keyCode = key.getAttribute('data-key');
+			if (this.keysPressed[keyCode]) {
+				key.classList.add('pressed');
+			} else {
+				key.classList.remove('pressed');
+			}
+		});
+	}
+
+	/**
+	 * Update the visual state of toggle keys
+	 */
+	updateToggleKeys() {
+		// Get all toggle key elements
+		const toggleKeyElements = this.controlsElement.querySelectorAll('.toggle-key');
+
+		// Update each toggle key's appearance
+		toggleKeyElements.forEach((key) => {
+			const keyCode = key.getAttribute('data-key');
+			if (this.toggleStates[keyCode]) {
+				key.classList.add('toggled');
+			} else {
+				key.classList.remove('toggled');
+			}
+		});
+	}
+
+	/**
+	 * Show the controls (only if not on mobile/touch device)
+	 */
+	show() {
+		if (!this.isMobileOrTouch) {
+			this.controlsElement.style.display = 'flex';
+		}
+	}
+
+	/**
+	 * Hide the controls
+	 */
+	hide() {
+		this.controlsElement.style.display = 'none';
+	}
+
+	/**
+	 * Detect if device is a mobile device (phone/tablet)
+	 * @returns {boolean} True if mobile device
+	 */
+	detectMobileOrTouch() {
+		// Check if it's a mobile device based on user agent
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent,
+		);
+
+		// Check screen size - typical cutoff for tablets is around 768px width
+		const isSmallScreen = window.innerWidth <= 1024;
+
+		// Only hide on mobile devices, not just any touch-enabled device
+		return isMobile && isSmallScreen;
+	}
+
+	/**
+	 * Remove the component and clean up event listeners
+	 */
+	dispose() {
+		if (this.keydownHandler) {
+			document.removeEventListener('keydown', this.keydownHandler);
+			this.keydownHandler = null;
+		}
+
+		if (this.keyupHandler) {
+			document.removeEventListener('keyup', this.keyupHandler);
+			this.keyupHandler = null;
+		}
+
+		if (this.controlsElement.parentNode) {
+			this.container.removeChild(this.controlsElement);
+		}
+	}
 }

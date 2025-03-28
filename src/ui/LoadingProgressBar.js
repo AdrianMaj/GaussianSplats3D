@@ -1,32 +1,32 @@
 export class LoadingProgressBar {
-    /**
-     * Creates a simple SVG loading progress bar that fills with color using CSS mask
-     * @param {HTMLElement} [container=document.body] - The container element
-     * @param {string} [barColor="black"] - Fill color for the progress 
-     * @param {string} [backgroundColor="white"] - Background color
-     */
-    constructor(container, barColor, backgroundColor = 'white') {
-        this.container = container || document.body;
-        this.barColor = barColor;
-        this.backgroundColor = backgroundColor;
-        
-        // Create the main container
-        this.progressBar = document.createElement('div');
-        this.progressBar.className = 'progress-bar-container';
-        this.progressBar.style.display = 'none';
-        
-        // Create loading fill element
-        this.loadingFill = document.createElement('div');
-        this.loadingFill.className = 'loading-fill';
+	/**
+	 * Creates a simple SVG loading progress bar that fills with color using CSS mask
+	 * @param {HTMLElement} [container=document.body] - The container element
+	 * @param {string} [barColor="black"] - Fill color for the progress
+	 * @param {string} [backgroundColor="white"] - Background color
+	 */
+	constructor(container, barColor, backgroundColor = 'white') {
+		this.container = container || document.body;
+		this.barColor = barColor;
+		this.backgroundColor = backgroundColor;
 
-        this.progressBarBorder = document.createElement('div');
-        this.progressBarBorder.className = 'progress-bar-container progress-bar-container-border';
-        
-        // Add to the container
-        this.progressBar.appendChild(this.loadingFill);
-        
-        // Create SVG mask as data URI
-        const svgMask = encodeURIComponent(`
+		// Create the main container
+		this.progressBar = document.createElement('div');
+		this.progressBar.className = 'progress-bar-container';
+		this.progressBar.style.display = 'none';
+
+		// Create loading fill element
+		this.loadingFill = document.createElement('div');
+		this.loadingFill.className = 'loading-fill';
+
+		this.progressBarBorder = document.createElement('div');
+		this.progressBarBorder.className = 'progress-bar-container progress-bar-container-border';
+
+		// Add to the container
+		this.progressBar.appendChild(this.loadingFill);
+
+		// Create SVG mask as data URI
+		const svgMask = encodeURIComponent(`
         <svg width="1255" height="219" viewBox="0 0 1255 219" fill="white" xmlns="http://www.w3.org/2000/svg">
             <path d="M932.241 0.82733C932.502 0.795399 932.764 0.752843 933.027 0.731556C963.013 -1.60851 993.558 5.3478 1016.9 24.8985C1039.69 43.9916 1051.33 69.3887 1053.84 98.8546C1056.38 128.83 1049.27 158.568 1029.43 181.649C1011.04 203.054 985.034 215.031 957.046 217.175C956.577 217.231 956.107 217.292 955.637 217.343C927.135 220.479 893.395 212.642 870.876 194.49C847.985 176.039 836.461 150.087 833.64 121.203C830.82 92.3302 838.232 60.892 856.928 38.2319C876.18 14.8997 902.595 3.58249 932.241 0.82733ZM946.797 160.895C960.136 158.992 970.948 154.393 979.352 143.343C988.857 130.849 991.442 114.764 989.21 99.4765C987.326 86.5735 981.096 74.7424 970.51 66.9118C969.43 66.1099 968.316 65.3558 967.17 64.6492C966.023 63.9437 964.847 63.2894 963.644 62.6863C962.441 62.0831 961.214 61.5327 959.963 61.035C958.712 60.5383 957.442 60.0963 956.152 59.7091C954.862 59.3229 953.558 58.9929 952.24 58.7192C950.922 58.4456 949.595 58.2296 948.258 58.0715C946.921 57.9134 945.579 57.8135 944.233 57.772C942.888 57.7304 941.543 57.7471 940.199 57.8221C927.587 58.8394 917.141 63.7506 908.887 73.4226C899.191 84.7869 895.653 100.288 896.894 114.954C898.025 128.327 903.464 141.867 913.919 150.648C923.271 158.504 934.8 161.273 946.797 160.895Z" fill="black"></path>
             <path d="M1189.75 4.31691C1211.43 4.3458 1233.18 4.03712 1254.85 4.72743L1254.74 143.311L1254.45 191.694C1254.4 197.828 1254.99 204.322 1254.56 210.392C1254.49 211.438 1254.19 212.116 1253.62 212.981L1251.32 213.294C1233.06 213.01 1214.76 213.206 1196.5 213.192C1175.59 181.85 1153.43 151.143 1131.7 120.352L1131.71 213.241C1110.47 213.086 1089.22 213.052 1067.97 213.141L1067.99 4.35946L1128.63 4.4416C1148.62 34.0779 1170.1 62.6908 1189.7 92.584C1190.49 63.2382 1189.71 33.684 1189.75 4.31691Z" fill="black"></path>
@@ -38,17 +38,17 @@ export class LoadingProgressBar {
             <path d="M434.4 3.82574C457.678 4.21094 480.957 4.41823 504.239 4.44763C499.321 18.2417 493.309 31.6876 488.145 45.4041L437.204 180.883C433.235 190.962 429.527 201.136 426.08 211.404C418.813 193.331 415.683 173.207 411.145 154.336C407.374 138.658 402.231 123.689 395.857 108.888C399.357 97.1774 404.162 85.5106 408.437 74.055C417.382 50.7527 426.036 27.343 434.4 3.82574Z" fill="black"></path>
         </svg>
         `);
-        
-        // Apply styles
-        const style = document.createElement('style');
-        style.innerHTML = `
+
+		// Apply styles
+		const style = document.createElement('style');
+		style.innerHTML = `
             .progress-bar-container {
                 position: fixed;
                 bottom: 28px;
                 left: 50%;
                 transform: translateX(-50%);
                 width: 300px;
-                background-color: ${this.backgroundColor ?? "white"};
+                background-color: ${this.backgroundColor ?? 'white'};
                 height: 60px;
                 z-index: 9999;
                 -webkit-mask: url("data:image/svg+xml;charset=utf8,${svgMask}") no-repeat center;
@@ -61,53 +61,53 @@ export class LoadingProgressBar {
             .loading-fill {
                 width: 100%;
                 height: 100%;
-                background-color: ${this.barColor ?? "#8200DB"};
+                background-color: ${this.barColor ?? '#8200DB'};
                 transform: scaleX(0);
                 transform-origin: left;
                 transition: transform 0.3s ease-out;
             }
         `;
-        
-        this.progressBar.appendChild(style);
-        this.container.appendChild(this.progressBar);
-    }
-    
-    /**
-     * Shows the loading progress bar
-     */
-    show() {
-        this.progressBar.style.display = 'block';
-    }
-    
-    /**
-     * Hides the loading progress bar
-     */
-    hide() {
-        this.progressBar.style.display = 'none';
-    }
-    
-    /**
-     * Updates the progress of the loading bar
-     * @param {number} progress - Progress percentage (0-100)
-     */
-    setProgress(progress) {
-        const clampedProgress = Math.min(Math.max(progress, 0), 100);
-        if (this.loadingFill) {
-            this.loadingFill.style.transform = `scaleX(${clampedProgress / 100})`;
-        }
-    }
-    
-    /**
-     * Sets a new container for the loading progress bar
-     * @param {HTMLElement} container - New container element
-     */
-    setContainer(container) {
-        if (this.container && this.progressBar.parentElement === this.container) {
-            this.container.removeChild(this.progressBar);
-        }
-        if (container) {
-            this.container = container;
-            this.container.appendChild(this.progressBar);
-        }
-    }
+
+		this.progressBar.appendChild(style);
+		this.container.appendChild(this.progressBar);
+	}
+
+	/**
+	 * Shows the loading progress bar
+	 */
+	show() {
+		this.progressBar.style.display = 'block';
+	}
+
+	/**
+	 * Hides the loading progress bar
+	 */
+	hide() {
+		this.progressBar.style.display = 'none';
+	}
+
+	/**
+	 * Updates the progress of the loading bar
+	 * @param {number} progress - Progress percentage (0-100)
+	 */
+	setProgress(progress) {
+		const clampedProgress = Math.min(Math.max(progress, 0), 100);
+		if (this.loadingFill) {
+			this.loadingFill.style.transform = `scaleX(${clampedProgress / 100})`;
+		}
+	}
+
+	/**
+	 * Sets a new container for the loading progress bar
+	 * @param {HTMLElement} container - New container element
+	 */
+	setContainer(container) {
+		if (this.container && this.progressBar.parentElement === this.container) {
+			this.container.removeChild(this.progressBar);
+		}
+		if (container) {
+			this.container = container;
+			this.container.appendChild(this.progressBar);
+		}
+	}
 }

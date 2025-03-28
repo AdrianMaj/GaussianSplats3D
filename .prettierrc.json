@@ -3,8 +3,5 @@
   "singleQuote": false,
   "trailingComma": "all",
   "printWidth": 110,
-
-  "useTabs": true,
-  "plugins": ["prettier-plugin-tailwindcss"],
-  "tailwindConfig": "./tailwind.config.ts"
+  "useTabs": true
 }
