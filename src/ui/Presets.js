@@ -20,21 +20,21 @@ export class Presets {
 		this.onUpdate =
 			options.onUpdate ||
 			((presets) => {
-				console.log(`Fill the function to update presets: `, presets);
+				console.log("Fill the function to update presets: ", presets);
 			});
 
-		this.role = options.role || 'user';
+		this.role = options.role || "user";
 		this.editMode = false; // Start in view mode, not edit mode
 
 		// Check if device is mobile
 		this.isMobile = this.detectMobile();
 
 		// Create controls container
-		this.controlsElement = document.createElement('div');
-		this.controlsElement.className = 'preset-controls-panel';
+		this.controlsElement = document.createElement("div");
+		this.controlsElement.className = "preset-controls-panel";
 
 		// Set initial display state
-		this.controlsElement.style.display = options.hide ? 'none' : 'flex';
+		this.controlsElement.style.display = options.hide ? "none" : "flex";
 
 		// Limit to maximum 9 presets
 		this.updatePresetIds();
@@ -43,7 +43,7 @@ export class Presets {
 		this.renderPresetButtons();
 
 		// Add admin controls if user is admin
-		if (this.role === 'admin') {
+		if (this.role === "admin") {
 			this.renderAdminControls();
 		}
 
@@ -63,7 +63,7 @@ export class Presets {
 				id: index + 1,
 				key: `Digit${index + 1}`,
 				// Keep original label if it exists
-				label: preset.label || '',
+				label: preset.label || "",
 			};
 		});
 	}
@@ -73,46 +73,46 @@ export class Presets {
 	 */
 	renderPresetButtons() {
 		// Clear content first
-		this.controlsElement.innerHTML = '';
+		this.controlsElement.innerHTML = "";
 
 		// If there are no presets and the user is not an admin, don't render anything
-		if (this.presets.length === 0 && this.role !== 'admin') {
+		if (this.presets.length === 0 && this.role !== "admin") {
 			return;
 		}
 
 		// Create a container for preset buttons
-		const presetsContainer = document.createElement('div');
-		presetsContainer.className = 'presets-container';
+		const presetsContainer = document.createElement("div");
+		presetsContainer.className = "presets-container";
 
 		// Create the preset buttons layout in a single row
 		for (let i = 0; i < this.presets.length; i++) {
 			const preset = this.presets[i];
-			const buttonContainer = document.createElement('div');
-			buttonContainer.className = 'preset-button-container';
+			const buttonContainer = document.createElement("div");
+			buttonContainer.className = "preset-button-container";
 
-			const button = document.createElement('div');
-			button.className = 'preset-button';
-			button.setAttribute('data-key', preset.key);
-			button.setAttribute('data-preset-index', i);
+			const button = document.createElement("div");
+			button.className = "preset-button";
+			button.setAttribute("data-key", preset.key);
+			button.setAttribute("data-preset-index", i);
 
 			// Display number and label if it exists
 			const positionNumber = i + 1;
-			const displayText = preset.label ?
-				`<span class="preset-number">${positionNumber}</span><span class="preset-label">${preset.label}</span>` :
-				positionNumber;
+			const displayText = preset.label
+				? `<span class="preset-number">${positionNumber}</span><span class="preset-label">${preset.label}</span>`
+				: positionNumber;
 
 			button.innerHTML = displayText;
 
 			// Add tooltips and edit mode styling for admin
-			if (this.role === 'admin' && this.editMode) {
-				button.classList.add('edit-mode');
-				button.setAttribute('data-tooltip', 'Click to overwrite');
+			if (this.role === "admin" && this.editMode) {
+				button.classList.add("edit-mode");
+				button.setAttribute("data-tooltip", "Click to overwrite");
 
 				// Add delete button (X) in the corner
-				const deleteButton = document.createElement('div');
-				deleteButton.className = 'preset-delete-button';
-				deleteButton.innerHTML = '×';
-				deleteButton.addEventListener('click', (e) => {
+				const deleteButton = document.createElement("div");
+				deleteButton.className = "preset-delete-button";
+				deleteButton.innerHTML = "×";
+				deleteButton.addEventListener("click", (e) => {
 					e.stopPropagation();
 					this.handleDeletePreset(i);
 				});
@@ -125,15 +125,15 @@ export class Presets {
 		}
 
 		// Add only one placeholder button (for the next position) if admin and in edit mode
-		if (this.role === 'admin' && this.editMode && this.presets.length < 9) {
-			const buttonContainer = document.createElement('div');
-			buttonContainer.className = 'preset-button-container';
+		if (this.role === "admin" && this.editMode && this.presets.length < 9) {
+			const buttonContainer = document.createElement("div");
+			buttonContainer.className = "preset-button-container";
 
-			const button = document.createElement('div');
-			button.className = 'preset-button preset-empty';
-			button.setAttribute('data-preset-index', this.presets.length);
-			button.innerHTML = '+';
-			button.setAttribute('data-tooltip', 'Add new preset');
+			const button = document.createElement("div");
+			button.className = "preset-button preset-empty";
+			button.setAttribute("data-preset-index", this.presets.length);
+			button.innerHTML = "+";
+			button.setAttribute("data-tooltip", "Add new preset");
 
 			buttonContainer.appendChild(button);
 			presetsContainer.appendChild(buttonContainer);
@@ -145,9 +145,9 @@ export class Presets {
 		}
 
 		// Only add styles if we're going to show something
-		if (this.presets.length > 0 || this.role === 'admin') {
+		if (this.presets.length > 0 || this.role === "admin") {
 			// Add styles
-			const style = document.createElement('style');
+			const style = document.createElement("style");
 			style.innerHTML = `
                 .preset-controls-panel {
                     position: absolute;
@@ -349,14 +349,14 @@ export class Presets {
 	renderAdminControls() {
 		// Only render admin controls if we're showing something
 		if (this.presets.length === 0 && !this.editMode) {
-			const adminControls = document.createElement('div');
-			adminControls.className = 'admin-controls';
+			const adminControls = document.createElement("div");
+			adminControls.className = "admin-controls";
 
 			// Add a toggle button to switch between view and edit modes
-			const editModeButton = document.createElement('div');
-			editModeButton.className = 'admin-button';
-			editModeButton.innerHTML = 'Enter Edit Mode';
-			editModeButton.addEventListener('click', () => {
+			const editModeButton = document.createElement("div");
+			editModeButton.className = "admin-button";
+			editModeButton.innerHTML = "Enter Edit Mode";
+			editModeButton.addEventListener("click", () => {
 				this.editMode = true;
 				this.renderPresetButtons(); // Re-render buttons with new mode
 				this.renderAdminControls(); // Re-render admin controls to update button text
@@ -367,14 +367,14 @@ export class Presets {
 			return;
 		}
 
-		const adminControls = document.createElement('div');
-		adminControls.className = 'admin-controls';
+		const adminControls = document.createElement("div");
+		adminControls.className = "admin-controls";
 
 		// Add a toggle button to switch between view and edit modes
-		const editModeButton = document.createElement('div');
-		editModeButton.className = `admin-button ${this.editMode ? 'active' : ''}`;
-		editModeButton.innerHTML = this.editMode ? 'Exit Edit Mode' : 'Enter Edit Mode';
-		editModeButton.addEventListener('click', () => {
+		const editModeButton = document.createElement("div");
+		editModeButton.className = `admin-button ${this.editMode ? "active" : ""}`;
+		editModeButton.innerHTML = this.editMode ? "Exit Edit Mode" : "Enter Edit Mode";
+		editModeButton.addEventListener("click", () => {
 			this.editMode = !this.editMode;
 			this.renderPresetButtons(); // Re-render buttons with new mode
 			this.renderAdminControls(); // Re-render admin controls to update button text
@@ -392,14 +392,14 @@ export class Presets {
 		// Don't set up keyboard listeners if on mobile
 		if (!this.isMobile) {
 			// Keydown event - highlight key and trigger preset
-			document.addEventListener('keydown', this.handleKeyDown.bind(this));
+			document.addEventListener("keydown", this.handleKeyDown.bind(this));
 
 			// Keyup event - remove highlight
-			document.addEventListener('keyup', this.handleKeyUp.bind(this));
+			document.addEventListener("keyup", this.handleKeyUp.bind(this));
 		}
 
 		// Click event for buttons
-		document.addEventListener('click', (event) => {
+		document.addEventListener("click", (event) => {
 			// Remove any open context menu when clicking elsewhere
 			if (this.contextMenu && !this.contextMenu.contains(event.target)) {
 				this.removeContextMenu();
@@ -407,24 +407,24 @@ export class Presets {
 
 			// Handle clicks on preset buttons
 			if (
-				event.target.classList.contains('preset-button') &&
-				!event.target.classList.contains('preset-empty')
+				event.target.classList.contains("preset-button") &&
+				!event.target.classList.contains("preset-empty")
 			) {
 				this.handleButtonClick(event);
 			} else if (
-				event.target.closest('.preset-button') &&
-				!event.target.classList.contains('preset-delete-button')
+				event.target.closest(".preset-button") &&
+				!event.target.classList.contains("preset-delete-button")
 			) {
 				// Handle clicks on child elements of the button (like number or label spans)
-				const button = event.target.closest('.preset-button');
-				if (button && !button.classList.contains('preset-empty')) {
+				const button = event.target.closest(".preset-button");
+				if (button && !button.classList.contains("preset-empty")) {
 					this.handleButtonClick({ target: button });
 				}
 			}
 
 			// Handle clicks on empty preset slots (for admin)
-			if (this.role === 'admin' && this.editMode && event.target.classList.contains('preset-empty')) {
-				this.handleCreatePreset(parseInt(event.target.getAttribute('data-preset-index')));
+			if (this.role === "admin" && this.editMode && event.target.classList.contains("preset-empty")) {
+				this.handleCreatePreset(parseInt(event.target.getAttribute("data-preset-index")));
 			}
 		});
 	}
@@ -464,17 +464,17 @@ export class Presets {
 	 */
 	handleButtonClick(event) {
 		const button = event.target;
-		const presetIndex = parseInt(button.getAttribute('data-preset-index'));
+		const presetIndex = parseInt(button.getAttribute("data-preset-index"));
 
 		if (presetIndex >= 0 && presetIndex < this.presets.length) {
 			// Visual feedback
-			button.classList.add('pressed');
+			button.classList.add("pressed");
 			setTimeout(() => {
-				button.classList.remove('pressed');
+				button.classList.remove("pressed");
 			}, 200);
 
 			// In edit mode for admin, clicking should overwrite instead of navigate
-			if (this.role === 'admin' && this.editMode) {
+			if (this.role === "admin" && this.editMode) {
 				this.handleOverwritePreset(presetIndex);
 			} else {
 				// Invoke the callback with the preset object
@@ -495,29 +495,29 @@ export class Presets {
 		this.removeContextMenu();
 
 		const button = event.target;
-		const presetIndex = parseInt(button.getAttribute('data-preset-index'));
+		const presetIndex = parseInt(button.getAttribute("data-preset-index"));
 
 		if (presetIndex >= 0 && presetIndex < this.presets.length) {
 			// Create context menu
-			this.contextMenu = document.createElement('div');
-			this.contextMenu.className = 'context-menu';
+			this.contextMenu = document.createElement("div");
+			this.contextMenu.className = "context-menu";
 
 			// Position context menu
 			this.contextMenu.style.left = `${event.clientX}px`;
 			this.contextMenu.style.top = `${event.clientY}px`;
 
-			const deleteItem = document.createElement('div');
-			deleteItem.className = 'context-menu-item';
-			deleteItem.innerHTML = 'Delete Preset';
-			deleteItem.addEventListener('click', () => {
+			const deleteItem = document.createElement("div");
+			deleteItem.className = "context-menu-item";
+			deleteItem.innerHTML = "Delete Preset";
+			deleteItem.addEventListener("click", () => {
 				this.handleDeletePreset(presetIndex);
 				this.removeContextMenu();
 			});
 
-			const overwriteItem = document.createElement('div');
-			overwriteItem.className = 'context-menu-item';
-			overwriteItem.innerHTML = 'Overwrite with Current View';
-			overwriteItem.addEventListener('click', () => {
+			const overwriteItem = document.createElement("div");
+			overwriteItem.className = "context-menu-item";
+			overwriteItem.innerHTML = "Overwrite with Current View";
+			overwriteItem.addEventListener("click", () => {
 				this.handleOverwritePreset(presetIndex);
 				this.removeContextMenu();
 			});
@@ -545,7 +545,7 @@ export class Presets {
 	 * Handle creating a new preset
 	 */
 	handleCreatePreset(index) {
-		if (this.role !== 'admin' || !this.editMode) return;
+		if (this.role !== "admin" || !this.editMode) return;
 
 		// Get current camera position and lookAt
 		this.getCurrentCameraState((cameraState) => {
@@ -580,8 +580,8 @@ export class Presets {
 				// Setup event listeners again since we re-rendered the buttons
 				this.setupEventListeners();
 			} else {
-				console.error('Invalid camera state received:', cameraState);
-				alert('Could not create preset: Invalid camera position data received.');
+				console.error("Invalid camera state received:", cameraState);
+				alert("Could not create preset: Invalid camera position data received.");
 			}
 		});
 	}
@@ -608,7 +608,7 @@ export class Presets {
 	 * Handle deleting a preset
 	 */
 	handleDeletePreset(index) {
-		if (this.role !== 'admin' || !this.editMode || index < 0 || index >= this.presets.length) return;
+		if (this.role !== "admin" || !this.editMode || index < 0 || index >= this.presets.length) return;
 
 		// Remove preset
 		const updatedPresets = [...this.presets];
@@ -633,7 +633,7 @@ export class Presets {
 	 * Handle overwriting a preset with current camera state
 	 */
 	handleOverwritePreset(index) {
-		if (this.role !== 'admin' || !this.editMode || index < 0 || index >= this.presets.length) return;
+		if (this.role !== "admin" || !this.editMode || index < 0 || index >= this.presets.length) return;
 
 		// Get current preset
 		const preset = this.presets[index];
@@ -660,8 +660,8 @@ export class Presets {
 					this.onUpdate(this.presets);
 				}
 			} else {
-				console.error('Invalid camera state received:', cameraState);
-				alert('Could not update preset: Invalid camera position data received.');
+				console.error("Invalid camera state received:", cameraState);
+				alert("Could not update preset: Invalid camera position data received.");
 			}
 		});
 	}
@@ -670,7 +670,7 @@ export class Presets {
 	 * Handle saving current view as a new preset
 	 */
 	handleSaveCurrentView() {
-		if (this.role !== 'admin' || !this.editMode) return;
+		if (this.role !== "admin" || !this.editMode) return;
 
 		// Get current camera position and lookAt
 		this.getCurrentCameraState((cameraState) => {
@@ -701,11 +701,11 @@ export class Presets {
 					// Setup event listeners again since we re-rendered the buttons
 					this.setupEventListeners();
 				} else {
-					alert('Maximum of 9 presets reached. Please delete or overwrite an existing preset.');
+					alert("Maximum of 9 presets reached. Please delete or overwrite an existing preset.");
 				}
 			} else {
-				console.error('Invalid camera state received:', cameraState);
-				alert('Could not create preset: Invalid camera position data received.');
+				console.error("Invalid camera state received:", cameraState);
+				alert("Could not create preset: Invalid camera position data received.");
 			}
 		});
 	}
@@ -717,7 +717,7 @@ export class Presets {
 	 */
 	getCurrentCameraState(callback) {
 		// Create a custom event to request the camera state from the Viewer
-		const event = new CustomEvent('request-camera-state', {
+		const event = new CustomEvent("request-camera-state", {
 			detail: {
 				callback: (position, lookAt) => {
 					callback({
@@ -736,15 +736,15 @@ export class Presets {
 	 */
 	updateHighlights() {
 		// Get all button elements
-		const buttonElements = this.controlsElement.querySelectorAll('.preset-button:not(.preset-empty)');
+		const buttonElements = this.controlsElement.querySelectorAll(".preset-button:not(.preset-empty)");
 
 		// Update each button's appearance
 		buttonElements.forEach((button) => {
-			const keyCode = button.getAttribute('data-key');
+			const keyCode = button.getAttribute("data-key");
 			if (this.keysPressed[keyCode]) {
-				button.classList.add('pressed');
+				button.classList.add("pressed");
 			} else {
-				button.classList.remove('pressed');
+				button.classList.remove("pressed");
 			}
 		});
 	}
@@ -776,7 +776,7 @@ export class Presets {
 		this.role = role;
 		this.editMode = false; // Reset edit mode when role changes
 		this.renderPresetButtons();
-		if (this.role === 'admin') {
+		if (this.role === "admin") {
 			this.renderAdminControls();
 		}
 		this.setupEventListeners();
@@ -805,10 +805,10 @@ export class Presets {
 	show() {
 		if (this.controlsElement) {
 			// If there are no presets and user is not admin, don't show anything
-			if (this.presets.length === 0 && this.role !== 'admin') {
-				this.controlsElement.style.display = 'none';
+			if (this.presets.length === 0 && this.role !== "admin") {
+				this.controlsElement.style.display = "none";
 			} else {
-				this.controlsElement.style.display = 'flex';
+				this.controlsElement.style.display = "flex";
 			}
 		}
 	}
@@ -818,7 +818,7 @@ export class Presets {
 	 */
 	hide() {
 		if (this.controlsElement) {
-			this.controlsElement.style.display = 'none';
+			this.controlsElement.style.display = "none";
 		}
 	}
 
@@ -826,8 +826,8 @@ export class Presets {
 	 * Remove the component and clean up event listeners
 	 */
 	dispose() {
-		document.removeEventListener('keydown', this.handleKeyDown);
-		document.removeEventListener('keyup', this.handleKeyUp);
+		document.removeEventListener("keydown", this.handleKeyDown);
+		document.removeEventListener("keyup", this.handleKeyUp);
 
 		// Remove context menu if open
 		this.removeContextMenu();

@@ -1,34 +1,35 @@
-import * as THREE from 'three';
-import { OrbitControls } from './OrbitControls.js';
-import { PlyLoader } from './loaders/ply/PlyLoader.js';
-import { SplatLoader } from './loaders/splat/SplatLoader.js';
-import { KSplatLoader } from './loaders/ksplat/KSplatLoader.js';
-import { SpzLoader } from './loaders/spz/SpzLoader.js';
-import { sceneFormatFromPath } from './loaders/Utils.js';
-import { LoadingSpinner } from './ui/LoadingSpinner.js';
-import { LoadingProgressBar } from './ui/LoadingProgressBar.js';
-import { InfoPanel } from './ui/InfoPanel.js';
-import { SceneHelper } from './SceneHelper.js';
-import { Raycaster } from './raycaster/Raycaster.js';
-import { SplatMesh } from './splatmesh/SplatMesh.js';
-import { createSortWorker } from './worker/SortWorker.js';
-import { Constants } from './Constants.js';
-import { getCurrentTime, isIOS, getIOSSemever, clamp } from './Util.js';
-import { AbortablePromise, AbortedPromiseError } from './AbortablePromise.js';
-import { SceneFormat } from './loaders/SceneFormat.js';
-import { WebXRMode } from './webxr/WebXRMode.js';
-import { VRButton } from './webxr/VRButton.js';
-import { ARButton } from './webxr/ARButton.js';
-import { delayedExecute, abortablePromiseWithExtractedComponents } from './Util.js';
-import { LoaderStatus } from './loaders/LoaderStatus.js';
-import { DirectLoadError } from './loaders/DirectLoadError.js';
-import { RenderMode } from './RenderMode.js';
-import { LogLevel } from './LogLevel.js';
-import { SceneRevealMode } from './SceneRevealMode.js';
-import { SplatRenderMode } from './SplatRenderMode.js';
-import { GSVisionLogo } from './ui/GSVisionLogo.js';
-import { Controls } from './ui/Controls.js';
-import { Presets } from './ui/Presets.js';
+import * as THREE from "three";
+import { OrbitControls } from "./OrbitControls.js";
+import { PlyLoader } from "./loaders/ply/PlyLoader.js";
+import { SplatLoader } from "./loaders/splat/SplatLoader.js";
+import { KSplatLoader } from "./loaders/ksplat/KSplatLoader.js";
+import { SpzLoader } from "./loaders/spz/SpzLoader.js";
+import { sceneFormatFromPath } from "./loaders/Utils.js";
+import { LoadingSpinner } from "./ui/LoadingSpinner.js";
+import { LoadingProgressBar } from "./ui/LoadingProgressBar.js";
+import { InfoPanel } from "./ui/InfoPanel.js";
+import { SceneHelper } from "./SceneHelper.js";
+import { Raycaster } from "./raycaster/Raycaster.js";
+import { SplatMesh } from "./splatmesh/SplatMesh.js";
+import { createSortWorker } from "./worker/SortWorker.js";
+import { Constants } from "./Constants.js";
+import { getCurrentTime, isIOS, getIOSSemever, clamp } from "./Util.js";
+import { AbortablePromise, AbortedPromiseError } from "./AbortablePromise.js";
+import { SceneFormat } from "./loaders/SceneFormat.js";
+import { WebXRMode } from "./webxr/WebXRMode.js";
+import { VRButton } from "./webxr/VRButton.js";
+import { ARButton } from "./webxr/ARButton.js";
+import { delayedExecute, abortablePromiseWithExtractedComponents } from "./Util.js";
+import { LoaderStatus } from "./loaders/LoaderStatus.js";
+import { DirectLoadError } from "./loaders/DirectLoadError.js";
+import { RenderMode } from "./RenderMode.js";
+import { LogLevel } from "./LogLevel.js";
+import { SceneRevealMode } from "./SceneRevealMode.js";
+import { SplatRenderMode } from "./SplatRenderMode.js";
+import { GSVisionLogo } from "./ui/GSVisionLogo.js";
+import { Controls } from "./ui/Controls.js";
+import { Presets } from "./ui/Presets.js";
+import { FloatingLabels } from "./ui/Labels.js";
 
 const THREE_CAMERA_FOV = 50;
 const MINIMUM_DISTANCE_TO_NEW_FOCAL_POINT = 0.75;
@@ -36,6 +37,41 @@ const MIN_SPLAT_COUNT_TO_SHOW_SPLAT_TREE_LOADING_SPINNER = 1500000;
 const FOCUS_MARKER_FADE_IN_SPEED = 10.0;
 const FOCUS_MARKER_FADE_OUT_SPEED = 2.5;
 const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
+
+const labelsData = [
+	{
+		id: "microwave",
+		position: [2.5, 1.2, -3.0],
+		text: "This is a new microwave",
+		options: {
+			backgroundColor: "#2c3e50",
+			textColor: "#ecf0f1",
+			width: 2.0,
+			height: 0.6,
+		},
+	},
+	{
+		id: "refrigerator",
+		position: [-1.8, 2.0, -2.5],
+		text: "Energy efficient refrigerator",
+		options: {
+			backgroundColor: "#3498db",
+			textColor: "#ffffff",
+			showConnector: true, // Add a line pointing down
+			connectorLength: 0.8,
+		},
+	},
+	{
+		id: "counter",
+		position: [0.5, 0.8, -2.0],
+		text: "Granite countertop\\nInstalled 2023", // Use \n for line breaks
+		options: {
+			backgroundColor: "#8e44ad",
+			opacity: 0.9,
+			width: 2.2,
+		},
+	},
+];
 
 /**
  * @typedef {Object} ViewerOptions
@@ -100,9 +136,9 @@ export class Viewer {
 
 		// Optional styles to apply to the rootElement if it needs to be created
 		this.containerStyles = options.containerStyles || {
-			width: '100%',
-			height: '100%',
-			position: 'absolute',
+			width: "100%",
+			height: "100%",
+			position: "absolute",
 		};
 
 		this.hideAttribution = options.hideAttribution || false;
@@ -125,8 +161,8 @@ export class Viewer {
 
 		// If 'selfDrivenMode' is true, the viewer manages its own update/animation loop via requestAnimationFrame()
 		if (options.selfDrivenMode === undefined || options.selfDrivenMode === null) {
-options.selfDrivenMode = true;
-}
+			options.selfDrivenMode = true;
+		}
 		this.selfDrivenMode = options.selfDrivenMode && !this.dropInMode;
 		this.selfDrivenUpdateFunc = this.selfDrivenUpdate.bind(this);
 
@@ -170,8 +206,8 @@ options.selfDrivenMode = true;
 		// If enabled, it requires specific CORS headers to be present in the response from the server that is sent when
 		// loading the application. More information is available in the README.
 		if (options.sharedMemoryForWorkers === undefined || options.sharedMemoryForWorkers === null) {
-options.sharedMemoryForWorkers = true;
-}
+			options.sharedMemoryForWorkers = true;
+		}
 		this.sharedMemoryForWorkers = options.sharedMemoryForWorkers;
 
 		// if 'dynamicScene' is true, it tells the viewer to assume scene elements are not stationary or that the number of splats in the
@@ -229,8 +265,8 @@ options.sharedMemoryForWorkers = true;
 
 		// Enable the usage of SIMD WebAssembly instructions for the splat sort
 		if (options.enableSIMDInSort === undefined || options.enableSIMDInSort === null) {
-options.enableSIMDInSort = true;
-}
+			options.enableSIMDInSort = true;
+		}
 		this.enableSIMDInSort = options.enableSIMDInSort;
 
 		// Level to compress non KSPLAT files when loading them for direct rendering
@@ -372,10 +408,12 @@ options.enableSIMDInSort = true;
 		this.presetsUI = new Presets(this.rootElement || document.body, {
 			presets: options.presets,
 			onPresetSelected: this.onPresetSelected.bind(this),
-			role: options.role ?? 'user',
+			role: options.role ?? "user",
 			onUpdate: options.onUpdate,
 		});
 		this.presetsUI.hide();
+
+		this.labelData = options.labels ?? labelsData ?? [];
 
 		this._uiVisible = undefined;
 
@@ -383,6 +421,10 @@ options.enableSIMDInSort = true;
 			options.orbitAroundFocalPoint !== undefined ? options.orbitAroundFocalPoint : true;
 
 		this.setupControlsIntegration();
+
+		if (this.initialized) {
+			this.setupLabels();
+		}
 
 		if (!this.dropInMode) this.init();
 	}
@@ -477,7 +519,7 @@ options.enableSIMDInSort = true;
 
 	toggleOrbitMode() {
 		this.orbitAroundFocalPoint = !this.orbitAroundFocalPoint;
-		console.log(`Orbit around focal point: ${this.orbitAroundFocalPoint ? 'enabled' : 'disabled'}`);
+		console.log(`Orbit around focal point: ${this.orbitAroundFocalPoint ? "enabled" : "disabled"}`);
 
 		// Update both the perspective and orthographic OrbitControls
 		if (this.perspectiveControls) {
@@ -489,7 +531,7 @@ options.enableSIMDInSort = true;
 
 		// Update the UI control state
 		if (this.controlsUI) {
-			this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
+			this.controlsUI.updateToggleState("KeyZ", this.orbitAroundFocalPoint);
 		}
 	}
 
@@ -498,7 +540,7 @@ options.enableSIMDInSort = true;
 
 		if (!this.rootElement) {
 			if (!this.usingExternalRenderer) {
-				this.rootElement = document.createElement('div');
+				this.rootElement = document.createElement("div");
 				Object.assign(this.rootElement.style, this.containerStyles);
 				document.body.appendChild(this.rootElement);
 			} else {
@@ -522,9 +564,9 @@ options.enableSIMDInSort = true;
 		this.loadingSpinner.setContainer(this.rootElement);
 		this.infoPanel.setContainer(this.rootElement);
 
-		document.addEventListener('request-camera-state', (event) => {
+		document.addEventListener("request-camera-state", (event) => {
 			const callback = event.detail.callback;
-			if (callback && typeof callback === 'function') {
+			if (callback && typeof callback === "function") {
 				// Get current camera position and target as arrays
 				const position = this.camera.position.toArray();
 				const lookAt = this.controls.target.toArray();
@@ -532,7 +574,15 @@ options.enableSIMDInSort = true;
 			}
 		});
 
+		this.setupLabels();
+
 		this.initialized = true;
+	}
+
+	setupLabels() {
+		if (this.labelData && this.labelData.length > 0 && this.threeScene && this.camera) {
+			this.labelsManager = new FloatingLabels(this, this.labelData);
+		}
 	}
 
 	setupCamera() {
@@ -568,7 +618,7 @@ options.enableSIMDInSort = true;
 
 			this.renderer = new THREE.WebGLRenderer({
 				antialias: false,
-				precision: 'highp',
+				precision: "highp",
 			});
 			this.renderer.setPixelRatio(this.devicePixelRatio);
 			this.renderer.autoClear = true;
@@ -592,10 +642,10 @@ options.enableSIMDInSort = true;
 			} else if (this.webXRMode === WebXRMode.AR) {
 				this.rootElement.appendChild(ARButton.createButton(this.renderer, webXRSessionInit));
 			}
-			this.renderer.xr.addEventListener('sessionstart', (e) => {
+			this.renderer.xr.addEventListener("sessionstart", (e) => {
 				this.webXRActive = true;
 			});
-			this.renderer.xr.addEventListener('sessionend', (e) => {
+			this.renderer.xr.addEventListener("sessionend", (e) => {
 				this.webXRActive = false;
 			});
 			this.renderer.xr.enabled = true;
@@ -638,25 +688,25 @@ options.enableSIMDInSort = true;
 	setupEventHandlers() {
 		if (this.useBuiltInControls && this.webXRMode === WebXRMode.None) {
 			this.mouseMoveListener = this.onMouseMove.bind(this);
-			this.renderer.domElement.addEventListener('pointermove', this.mouseMoveListener, false);
+			this.renderer.domElement.addEventListener("pointermove", this.mouseMoveListener, false);
 			this.mouseDownListener = this.onMouseDown.bind(this);
-			this.renderer.domElement.addEventListener('pointerdown', this.mouseDownListener, false);
+			this.renderer.domElement.addEventListener("pointerdown", this.mouseDownListener, false);
 			this.mouseUpListener = this.onMouseUp.bind(this);
-			this.renderer.domElement.addEventListener('pointerup', this.mouseUpListener, false);
+			this.renderer.domElement.addEventListener("pointerup", this.mouseUpListener, false);
 			this.keyDownListener = this.onKeyDown.bind(this);
-			window.addEventListener('keydown', this.keyDownListener, false);
+			window.addEventListener("keydown", this.keyDownListener, false);
 		}
 	}
 
 	removeEventHandlers() {
 		if (this.useBuiltInControls) {
-			this.renderer.domElement.removeEventListener('pointermove', this.mouseMoveListener);
+			this.renderer.domElement.removeEventListener("pointermove", this.mouseMoveListener);
 			this.mouseMoveListener = null;
-			this.renderer.domElement.removeEventListener('pointerdown', this.mouseDownListener);
+			this.renderer.domElement.removeEventListener("pointerdown", this.mouseDownListener);
 			this.mouseDownListener = null;
-			this.renderer.domElement.removeEventListener('pointerup', this.mouseUpListener);
+			this.renderer.domElement.removeEventListener("pointerup", this.mouseUpListener);
 			this.mouseUpListener = null;
-			window.removeEventListener('keydown', this.keyDownListener);
+			window.removeEventListener("keydown", this.keyDownListener);
 			this.keyDownListener = null;
 		}
 	}
@@ -699,38 +749,38 @@ options.enableSIMDInSort = true;
 		this.forceRenderNextFrame();
 	}
 
-	onKeyDown = (function() {
+	onKeyDown = (function () {
 		const forward = new THREE.Vector3();
 		const tempMatrixLeft = new THREE.Matrix4();
 		const tempMatrixRight = new THREE.Matrix4();
 
-		return function(e) {
+		return function (e) {
 			forward.set(0, 0, -1);
 			forward.transformDirection(this.camera.matrixWorld);
 			tempMatrixLeft.makeRotationAxis(forward, Math.PI / 128);
 			tempMatrixRight.makeRotationAxis(forward, -Math.PI / 128);
 			switch (e.code) {
-				case 'KeyG':
+				case "KeyG":
 					this.focalAdjustment += 0.02;
 					this.forceRenderNextFrame();
 					break;
-				case 'KeyF':
+				case "KeyF":
 					this.focalAdjustment -= 0.02;
 					this.forceRenderNextFrame();
 					break;
-				case 'ArrowLeft':
+				case "ArrowLeft":
 					this.camera.up.transformDirection(tempMatrixLeft);
 					break;
-				case 'ArrowRight':
+				case "ArrowRight":
 					this.camera.up.transformDirection(tempMatrixRight);
 					break;
-				case 'KeyC':
+				case "KeyC":
 					this.showMeshCursor = !this.showMeshCursor;
 					break;
-				case 'KeyU':
+				case "KeyU":
 					this.showControlPlane = !this.showControlPlane;
 					break;
-				case 'KeyI':
+				case "KeyI":
 					this.showInfo = !this.showInfo;
 					if (this.showInfo) {
 						this.infoPanel.show();
@@ -738,40 +788,40 @@ options.enableSIMDInSort = true;
 						this.infoPanel.hide();
 					}
 					// Update UI toggle state
-					if (this.controlsUI) this.controlsUI.updateToggleState('KeyI', this.showInfo);
+					if (this.controlsUI) this.controlsUI.updateToggleState("KeyI", this.showInfo);
 					break;
-				case 'KeyO':
+				case "KeyO":
 					if (!this.usingExternalCamera) {
 						this.setOrthographicMode(!this.camera.isOrthographicCamera);
 						// Update UI toggle state
-						if (this.controlsUI) this.controlsUI.updateToggleState('KeyO', this.camera.isOrthographicCamera);
+						if (this.controlsUI) this.controlsUI.updateToggleState("KeyO", this.camera.isOrthographicCamera);
 					}
 					break;
-				case 'KeyP':
+				case "KeyP":
 					if (!this.usingExternalCamera) {
 						this.splatMesh.setPointCloudModeEnabled(!this.splatMesh.getPointCloudModeEnabled());
 						// Update UI toggle state
 						if (this.controlsUI) {
-this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnabled());
-}
+							this.controlsUI.updateToggleState("KeyP", this.splatMesh.getPointCloudModeEnabled());
+						}
 					}
 					break;
-				case 'Equal':
+				case "Equal":
 					if (!this.usingExternalCamera) {
 						this.splatMesh.setSplatScale(this.splatMesh.getSplatScale() + 0.05);
 					}
 					break;
-				case 'Minus':
+				case "Minus":
 					if (!this.usingExternalCamera) {
 						this.splatMesh.setSplatScale(Math.max(this.splatMesh.getSplatScale() - 0.05, 0.0));
 					}
 					break;
-				case 'KeyZ':
+				case "KeyZ":
 					this.toggleOrbitMode();
 					// Update UI toggle state
-					if (this.controlsUI) this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
+					if (this.controlsUI) this.controlsUI.updateToggleState("KeyZ", this.orbitAroundFocalPoint);
 					break;
-				case 'F1':
+				case "F1":
 					this.toggleUIVisibility();
 					e.preventDefault(); // Prevent default browser F1 behavior
 					break;
@@ -788,19 +838,19 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 
 		// Initial states - only set if the relevant properties exist
 		if (this.orbitAroundFocalPoint !== undefined) {
-			this.controlsUI.updateToggleState('KeyZ', this.orbitAroundFocalPoint);
+			this.controlsUI.updateToggleState("KeyZ", this.orbitAroundFocalPoint);
 		}
 
 		if (this.camera) {
-			this.controlsUI.updateToggleState('KeyO', this.camera.isOrthographicCamera);
+			this.controlsUI.updateToggleState("KeyO", this.camera.isOrthographicCamera);
 		}
 
-		if (this.splatMesh && typeof this.splatMesh.getPointCloudModeEnabled === 'function') {
-			this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnabled());
+		if (this.splatMesh && typeof this.splatMesh.getPointCloudModeEnabled === "function") {
+			this.controlsUI.updateToggleState("KeyP", this.splatMesh.getPointCloudModeEnabled());
 		}
 
 		if (this.showInfo !== undefined) {
-			this.controlsUI.updateToggleState('KeyI', this.showInfo);
+			this.controlsUI.updateToggleState("KeyI", this.showInfo);
 		}
 	}
 
@@ -809,10 +859,10 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		this.mouseDownTime = getCurrentTime();
 	}
 
-	onMouseUp = (function() {
+	onMouseUp = (function () {
 		const clickOffset = new THREE.Vector2();
 
-		return function(mouse) {
+		return function (mouse) {
 			clickOffset.copy(this.mousePosition).sub(this.mouseDownPosition);
 			const mouseUpTime = getCurrentTime();
 			const wasClick = mouseUpTime - this.mouseDownTime < 0.5 && clickOffset.length() < 2;
@@ -827,12 +877,12 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		this.checkForFocalPointChange();
 	}
 
-	checkForFocalPointChange = (function() {
+	checkForFocalPointChange = (function () {
 		const renderDimensions = new THREE.Vector2();
 		const toNewFocalPoint = new THREE.Vector3();
 		const outHits = [];
 
-		return function() {
+		return function () {
 			if (!this.orbitAroundFocalPoint) return;
 
 			if (!this.transitioningCameraTarget) {
@@ -898,10 +948,10 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		}
 	}
 
-	static setCameraPositionFromZoom = (function() {
+	static setCameraPositionFromZoom = (function () {
 		const tempVector = new THREE.Vector3();
 
-		return function(positionCamera, zoomedCamera, controls) {
+		return function (positionCamera, zoomedCamera, controls) {
 			const toLookAtDistance = 1 / (zoomedCamera.zoom * 0.001);
 			tempVector
 				.copy(controls.target)
@@ -913,19 +963,19 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		};
 	})();
 
-	static setCameraZoomFromPosition = (function() {
+	static setCameraZoomFromPosition = (function () {
 		const tempVector = new THREE.Vector3();
 
-		return function(zoomCamera, positionZamera, controls) {
+		return function (zoomCamera, positionZamera, controls) {
 			const toLookAtDistance = tempVector.copy(controls.target).sub(positionZamera.position).length();
 			zoomCamera.zoom = 1 / (toLookAtDistance * 0.001);
 		};
 	})();
 
-	updateSplatMesh = (function() {
+	updateSplatMesh = (function () {
 		const renderDimensions = new THREE.Vector2();
 
-		return function() {
+		return function () {
 			if (!this.splatMesh) return;
 			const splatCount = this.splatMesh.getSplatCount();
 			if (splatCount > 0) {
@@ -1016,11 +1066,11 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 	 */
 	addSplatScene(path, options = {}) {
 		if (this.isLoadingOrUnloading()) {
-			throw new Error('Cannot add splat scene while another load or unload is already in progress.');
+			throw new Error("Cannot add splat scene while another load or unload is already in progress.");
 		}
 
 		if (this.isDisposingOrDisposed()) {
-			throw new Error('Cannot add splat scene after dispose() is called.');
+			throw new Error("Cannot add splat scene after dispose() is called.");
 		}
 
 		if (options.progressiveLoad && this.splatMesh.scenes && this.splatMesh.scenes.length > 0) {
@@ -1037,7 +1087,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		let loadingUITaskId = null;
 		if (showLoadingUI) {
 			this.loadingSpinner.removeAllTasks();
-			loadingUITaskId = this.loadingSpinner.addTask('Downloading...');
+			loadingUITaskId = this.loadingSpinner.addTask("Downloading...");
 		}
 		const hideLoadingUI = () => {
 			this.loadingProgressBar.hide();
@@ -1048,17 +1098,17 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			if (showLoadingUI) {
 				if (loaderStatus === LoaderStatus.Downloading) {
 					if (percentComplete == 100) {
-						this.loadingSpinner.setMessageForTask(loadingUITaskId, 'Download complete!');
+						this.loadingSpinner.setMessageForTask(loadingUITaskId, "Download complete!");
 					} else {
 						if (progressiveLoad) {
-							this.loadingSpinner.setMessageForTask(loadingUITaskId, 'Downloading splats...');
+							this.loadingSpinner.setMessageForTask(loadingUITaskId, "Downloading splats...");
 						} else {
 							const suffix = percentCompleteLabel ? `: ${percentCompleteLabel}` : `...`;
 							this.loadingSpinner.setMessageForTask(loadingUITaskId, `Downloading${suffix}`);
 						}
 					}
 				} else if (loaderStatus === LoaderStatus.Processing) {
-					this.loadingSpinner.setMessageForTask(loadingUITaskId, 'Processing splats...');
+					this.loadingSpinner.setMessageForTask(loadingUITaskId, "Processing splats...");
 				}
 			}
 		};
@@ -1089,7 +1139,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		};
 
 		const buildSection = (splatBuffer, firstBuild, finalBuild) => {
-			if (!progressiveLoad && options.onProgress) options.onProgress(0, '0%', LoaderStatus.Processing);
+			if (!progressiveLoad && options.onProgress) options.onProgress(0, "0%", LoaderStatus.Processing);
 			const addSplatBufferOptions = {
 				rotation: options.rotation || options.orientation,
 				position: options.position,
@@ -1105,14 +1155,14 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 				progressiveLoad,
 				progressiveLoad,
 			).then(() => {
-				if (!progressiveLoad && options.onProgress) options.onProgress(100, '100%', LoaderStatus.Processing);
+				if (!progressiveLoad && options.onProgress) options.onProgress(100, "100%", LoaderStatus.Processing);
 				splatBuffersAddedUIUpdate(firstBuild, finalBuild);
 			});
 		};
 
-		const loadFunc = progressiveLoad ?
-			this.downloadAndBuildSingleSplatSceneProgressiveLoad.bind(this) :
-			this.downloadAndBuildSingleSplatSceneStandardLoad.bind(this);
+		const loadFunc = progressiveLoad
+			? this.downloadAndBuildSingleSplatSceneProgressiveLoad.bind(this)
+			: this.downloadAndBuildSingleSplatSceneStandardLoad.bind(this);
 		return loadFunc(
 			path,
 			format,
@@ -1306,11 +1356,11 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 	 */
 	addSplatScenes(sceneOptions, showLoadingUI = true, onProgress = undefined) {
 		if (this.isLoadingOrUnloading()) {
-			throw new Error('Cannot add splat scene while another load or unload is already in progress.');
+			throw new Error("Cannot add splat scene while another load or unload is already in progress.");
 		}
 
 		if (this.isDisposingOrDisposed()) {
-			throw new Error('Cannot add splat scene after dispose() is called.');
+			throw new Error("Cannot add splat scene after dispose() is called.");
 		}
 
 		const fileCount = sceneOptions.length;
@@ -1319,7 +1369,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		let loadingUITaskId;
 		if (showLoadingUI) {
 			this.loadingSpinner.removeAllTasks();
-			loadingUITaskId = this.loadingSpinner.addTask('Downloading...');
+			loadingUITaskId = this.loadingSpinner.addTask("Downloading...");
 		}
 
 		const onLoadProgress = (fileIndex, percent, percentLabel, loaderStatus) => {
@@ -1344,9 +1394,9 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		for (let i = 0; i < sceneOptions.length; i++) {
 			const options = sceneOptions[i];
 			const format =
-				options.format !== undefined && options.format !== null ?
-					options.format :
-					sceneFormatFromPath(options.path);
+				options.format !== undefined && options.format !== null
+					? options.format
+					: sceneFormatFromPath(options.path);
 			const baseDownloadPromise = this.downloadSplatSceneToSplatBuffer(
 				options.path,
 				options.splatAlphaRemovalThreshold,
@@ -1365,7 +1415,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 				Promise.all(nativeDownloadPromises)
 					.then((splatBuffers) => {
 						if (showLoadingUI) this.loadingSpinner.removeTask(loadingUITaskId);
-						if (onProgress) onProgress(0, '0%', LoaderStatus.Processing);
+						if (onProgress) onProgress(0, "0%", LoaderStatus.Processing);
 						this.addSplatBuffers(
 							splatBuffers,
 							sceneOptions,
@@ -1375,7 +1425,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 							false,
 							false,
 						).then(() => {
-							if (onProgress) onProgress(100, '100%', LoaderStatus.Processing);
+							if (onProgress) onProgress(100, "100%", LoaderStatus.Processing);
 							this.clearSplatSceneDownloadAndBuildPromise();
 							resolve();
 						});
@@ -1477,8 +1527,8 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 	 * Add one or more instances of SplatBuffer to the SplatMesh instance managed by the viewer and set up the sorting web worker.
 	 * This function will terminate the existing sort worker (if there is one).
 	 */
-	addSplatBuffers = (function() {
-		return function(
+	addSplatBuffers = (function () {
+		return function (
 			splatBuffers,
 			splatBufferOptions = [],
 			finalBuild = true,
@@ -1501,7 +1551,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			this.splatRenderReady = false;
 			return new Promise((resolve) => {
 				if (showLoadingUI) {
-					splatProcessingTaskId = this.loadingSpinner.addTask('Processing splats...');
+					splatProcessingTaskId = this.loadingSpinner.addTask("Processing splats...");
 				}
 				delayedExecute(() => {
 					if (this.isDisposingOrDisposed()) {
@@ -1532,9 +1582,9 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 							});
 						}
 						const sortWorkerSetupPromise =
-							!this.sortWorker && maxSplatCount > 0 ?
-								this.setupSortWorker(this.splatMesh) :
-								Promise.resolve();
+							!this.sortWorker && maxSplatCount > 0
+								? this.setupSortWorker(this.splatMesh)
+								: Promise.resolve();
 						sortWorkerSetupPromise.then(() => {
 							if (this.isDisposingOrDisposed()) return;
 							this.runSplatSort(true, true).then((sortRunning) => {
@@ -1585,10 +1635,10 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 	 * @param {boolean} showLoadingUIForSplatTreeBuild Whether or not to show the loading spinner during construction of the splat tree.
 	 * @return {object} Object containing info about the splats that are updated
 	 */
-	addSplatBuffersToMesh = (function() {
+	addSplatBuffersToMesh = (function () {
 		let splatOptimizingTaskId;
 
-		return function(
+		return function (
 			splatBuffers,
 			splatBufferOptions,
 			finalBuild = true,
@@ -1601,9 +1651,9 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			let allSplatBufferOptions = [];
 			if (!replaceExisting) {
 				allSplatBuffers = this.splatMesh.scenes.map((scene) => scene.splatBuffer) || [];
-				allSplatBufferOptions = this.splatMesh.sceneOptions ?
-					this.splatMesh.sceneOptions.map((sceneOptions) => sceneOptions) :
-					[];
+				allSplatBufferOptions = this.splatMesh.sceneOptions
+					? this.splatMesh.sceneOptions.map((sceneOptions) => sceneOptions)
+					: [];
 			}
 			allSplatBuffers.push(...splatBuffers);
 			allSplatBufferOptions.push(...splatBufferOptions);
@@ -1617,7 +1667,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 				) {
 					if (!finished && !splatOptimizingTaskId) {
 						this.loadingSpinner.setMinimized(true, true);
-						splatOptimizingTaskId = this.loadingSpinner.addTask('Optimizing data structures...');
+						splatOptimizingTaskId = this.loadingSpinner.addTask("Optimizing data structures...");
 					}
 				}
 			};
@@ -1686,7 +1736,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 				} else if (e.data.sortCanceled) {
 					this.sortRunning = false;
 				} else if (e.data.sortSetupPhase1Complete) {
-					if (this.logLevel >= LogLevel.Info) console.log('Sorting web worker WASM setup complete.');
+					if (this.logLevel >= LogLevel.Info) console.log("Sorting web worker WASM setup complete.");
 					if (this.sharedMemoryForWorkers) {
 						this.sortWorkerSortedIndexes = new Uint32Array(
 							e.data.sortedIndexesBuffer,
@@ -1717,17 +1767,17 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 					this.sortWorker.maxSplatCount = maxSplatCount;
 
 					if (this.logLevel >= LogLevel.Info) {
-						console.log('Sorting web worker ready.');
+						console.log("Sorting web worker ready.");
 						const splatDataTextures = this.splatMesh.getSplatDataTextures();
 						const covariancesTextureSize = splatDataTextures.covariances.size;
 						const centersColorsTextureSize = splatDataTextures.centerColors.size;
 						console.log(
-							'Covariances texture size: ' + covariancesTextureSize.x + ' x ' + covariancesTextureSize.y,
+							"Covariances texture size: " + covariancesTextureSize.x + " x " + covariancesTextureSize.y,
 						);
 						console.log(
-							'Centers/colors texture size: ' +
+							"Centers/colors texture size: " +
 								centersColorsTextureSize.x +
-								' x ' +
+								" x " +
 								centersColorsTextureSize.y,
 						);
 					}
@@ -1741,7 +1791,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 	updateError(error, defaultMessage) {
 		if (error instanceof AbortedPromiseError) return error;
 		if (error instanceof DirectLoadError) {
-			return new Error('File type or server does not support progressive loading.');
+			return new Error("File type or server does not support progressive loading.");
 		}
 		return defaultMessage ? new Error(defaultMessage) : error;
 	}
@@ -1764,11 +1814,11 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 
 	removeSplatScenes(indexesToRemove, showLoadingUI = true) {
 		if (this.isLoadingOrUnloading()) {
-			throw new Error('Cannot remove splat scene while another load or unload is already in progress.');
+			throw new Error("Cannot remove splat scene while another load or unload is already in progress.");
 		}
 
 		if (this.isDisposingOrDisposed()) {
-			throw new Error('Cannot remove splat scene after dispose() is called.');
+			throw new Error("Cannot remove splat scene after dispose() is called.");
 		}
 
 		let sortPromise;
@@ -1779,7 +1829,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			if (showLoadingUI) {
 				this.loadingSpinner.removeAllTasks();
 				this.loadingSpinner.show();
-				revmovalTaskId = this.loadingSpinner.addTask('Removing splat scene...');
+				revmovalTaskId = this.loadingSpinner.addTask("Removing splat scene...");
 			}
 
 			const checkAndHideLoadingUI = () => {
@@ -1878,7 +1928,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			}
 			this.selfDrivenModeRunning = true;
 		} else {
-			throw new Error('Cannot start viewer unless it is in self driven mode.');
+			throw new Error("Cannot start viewer unless it is in self driven mode.");
 		}
 	}
 
@@ -1959,6 +2009,10 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 				}
 				this.renderer = null;
 			}
+			if (this.labelsManager) {
+				this.labelsManager.dispose();
+				this.labelsManager = null;
+			}
 
 			if (!this.usingExternalRenderer) {
 				document.body.removeChild(this.rootElement);
@@ -1973,7 +2027,7 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			this.disposePromise = null;
 		});
 		promisesToAbort.forEach((toAbort) => {
-			toAbort.abort('Scene disposed');
+			toAbort.abort("Scene disposed");
 		});
 		return this.disposePromise;
 	}
@@ -1996,13 +2050,13 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		this.renderNextFrame = true;
 	}
 
-	shouldRender = (function() {
+	shouldRender = (function () {
 		let renderCount = 0;
 		const lastCameraPosition = new THREE.Vector3();
 		const lastCameraOrientation = new THREE.Quaternion();
 		const changeEpsilon = 0.0001;
 
-		return function() {
+		return function () {
 			if (!this.initialized || !this.splatRenderReady || this.isDisposingOrDisposed()) return false;
 
 			let shouldRender = false;
@@ -2039,8 +2093,8 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 		};
 	})();
 
-	render = (function() {
-		return function() {
+	render = (function () {
+		return function () {
 			if (!this.initialized || !this.splatRenderReady || this.isDisposingOrDisposed()) return;
 
 			const hasRenderables = (threeScene) => {
@@ -2058,8 +2112,8 @@ this.controlsUI.updateToggleState('KeyP', this.splatMesh.getPointCloudModeEnable
 			this.renderer.render(this.splatMesh, this.camera);
 			this.renderer.autoClear = false;
 			if (this.sceneHelper.getFocusMarkerOpacity() > 0.0) {
-this.renderer.render(this.sceneHelper.focusMarker, this.camera);
-}
+				this.renderer.render(this.sceneHelper.focusMarker, this.camera);
+			}
 			if (this.showControlPlane) this.renderer.render(this.sceneHelper.controlPlane, this.camera);
 			this.renderer.autoClear = savedAuoClear;
 		};
@@ -2094,11 +2148,11 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		this.init();
 	}
 
-	updateFPS = (function() {
+	updateFPS = (function () {
 		let lastCalcTime = getCurrentTime();
 		let frameCount = 0;
 
-		return function() {
+		return function () {
 			if (this.consecutiveRenderFrames > CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION) {
 				const currentTime = getCurrentTime();
 				const calcDelta = currentTime - lastCalcTime;
@@ -2115,12 +2169,12 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		};
 	})();
 
-	updateForRendererSizeChanges = (function() {
+	updateForRendererSizeChanges = (function () {
 		const lastRendererSize = new THREE.Vector2();
 		const currentRendererSize = new THREE.Vector2();
 		let lastCameraOrthographic;
 
-		return function() {
+		return function () {
 			if (!this.usingExternalCamera) {
 				this.renderer.getSize(currentRendererSize);
 				if (
@@ -2145,10 +2199,10 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		};
 	})();
 
-	timingSensitiveUpdates = (function() {
+	timingSensitiveUpdates = (function () {
 		let lastUpdateTime;
 
-		return function() {
+		return function () {
 			const currentTime = getCurrentTime();
 			if (!lastUpdateTime) lastUpdateTime = currentTime;
 			const timeDelta = currentTime - lastUpdateTime;
@@ -2160,12 +2214,12 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		};
 	})();
 
-	updateCameraTransition = (function() {
+	updateCameraTransition = (function () {
 		let tempCameraTarget = new THREE.Vector3();
 		let toPreviousTarget = new THREE.Vector3();
 		let toNextTarget = new THREE.Vector3();
 
-		return function(currentTime) {
+		return function (currentTime) {
 			if (this.transitioningCameraTarget) {
 				toPreviousTarget.copy(this.previousCameraTarget).sub(this.camera.position).normalize();
 				toNextTarget.copy(this.nextCameraTarget).sub(this.camera.position).normalize();
@@ -2182,11 +2236,11 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		};
 	})();
 
-	updateFocusMarker = (function() {
+	updateFocusMarker = (function () {
 		const renderDimensions = new THREE.Vector2();
 		let wasTransitioning = false;
 
-		return function(timeDelta) {
+		return function (timeDelta) {
 			this.getRenderDimensions(renderDimensions);
 			if (this.transitioningCameraTarget) {
 				this.sceneHelper.setFocusMarkerVisibility(true);
@@ -2218,11 +2272,11 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		};
 	})();
 
-	updateMeshCursor = (function() {
+	updateMeshCursor = (function () {
 		const outHits = [];
 		const renderDimensions = new THREE.Vector2();
 
-		return function() {
+		return function () {
 			if (this.showMeshCursor) {
 				this.forceRenderNextFrame();
 				this.getRenderDimensions(renderDimensions);
@@ -2242,10 +2296,10 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		};
 	})();
 
-	updateInfoPanel = (function() {
+	updateInfoPanel = (function () {
 		const renderDimensions = new THREE.Vector2();
 
-		return function() {
+		return function () {
 			if (!this.showInfo) return;
 			const splatCount = this.splatMesh.getSplatCount();
 			this.getRenderDimensions(renderDimensions);
@@ -2259,7 +2313,7 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 				this.camera.up,
 				this.camera.isOrthographicCamera,
 				meshCursorPosition,
-				this.currentFPS || 'N/A',
+				this.currentFPS || "N/A",
 				splatCount,
 				this.splatRenderCount,
 				splatRenderCountPct,
@@ -2280,7 +2334,7 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 		}
 	}
 
-	runSplatSort = (function() {
+	runSplatSort = (function () {
 		const mvpMatrix = new THREE.Matrix4();
 		const cameraPositionArray = [];
 		const lastSortViewDir = new THREE.Vector3(0, 0, -1);
@@ -2304,7 +2358,7 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 			},
 		];
 
-		return function(force = false, forceSortAll = false) {
+		return function (force = false, forceSortAll = false) {
 			if (!this.initialized) return Promise.resolve(false);
 			if (this.sortRunning) return Promise.resolve(true);
 			if (this.splatMesh.getSplatCount() <= 0) {
@@ -2417,7 +2471,7 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 	/**
 	 * Determine which splats to render by checking which are inside or close to the view frustum
 	 */
-	gatherSceneNodesForSort = (function() {
+	gatherSceneNodesForSort = (function () {
 		const nodeRenderList = [];
 		let allSplatsSortBuffer = null;
 		const tempVectorYZ = new THREE.Vector3();
@@ -2434,7 +2488,7 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 			return tempMax.copy(node.max).sub(node.min).length();
 		};
 
-		return function(gatherAllNodes = false) {
+		return function (gatherAllNodes = false) {
 			this.getRenderDimensions(renderDimensions);
 			const cameraFocalLength =
 				renderDimensions.y / 2.0 / Math.tan((this.camera.fov / 2.0) * THREE.MathUtils.DEG2RAD);
@@ -2546,6 +2600,6 @@ this.renderer.render(this.sceneHelper.focusMarker, this.camera);
 	}
 
 	isMobile() {
-		return navigator.userAgent.includes('Mobi');
+		return navigator.userAgent.includes("Mobi");
 	}
 }

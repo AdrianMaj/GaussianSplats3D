@@ -13,9 +13,9 @@ export class Controls {
 		this.isMobileOrTouch = this.detectMobileOrTouch();
 
 		// Create controls container
-		this.controlsElement = document.createElement('div');
-		this.controlsElement.className = 'controls-panel';
-		this.controlsElement.style.display = hide || this.isMobileOrTouch ? 'none' : 'flex';
+		this.controlsElement = document.createElement("div");
+		this.controlsElement.className = "controls-panel";
+		this.controlsElement.style.display = hide || this.isMobileOrTouch ? "none" : "flex";
 
 		// Create the key layout
 		this.controlsElement.innerHTML = `
@@ -62,7 +62,7 @@ export class Controls {
         `;
 
 		// Add styles
-		const style = document.createElement('style');
+		const style = document.createElement("style");
 		style.innerHTML = `
             .controls-panel {
                 position: absolute;
@@ -172,19 +172,19 @@ export class Controls {
 		};
 
 		// Add event listeners
-		document.addEventListener('keydown', this.keydownHandler);
-		document.addEventListener('keyup', this.keyupHandler);
+		document.addEventListener("keydown", this.keydownHandler);
+		document.addEventListener("keyup", this.keyupHandler);
 
 		// Add click handlers for toggle keys
-		const toggleKeys = this.controlsElement.querySelectorAll('.toggle-key');
+		const toggleKeys = this.controlsElement.querySelectorAll(".toggle-key");
 		toggleKeys.forEach((key) => {
-			key.addEventListener('click', () => {
-				const keyCode = key.getAttribute('data-key');
+			key.addEventListener("click", () => {
+				const keyCode = key.getAttribute("data-key");
 				if (this.toggleStates.hasOwnProperty(keyCode)) {
 					this.toggleStates[keyCode] = !this.toggleStates[keyCode];
 					this.updateToggleKeys();
 					// Simulate a key press to trigger the viewer's handlers
-					const keyEvent = new KeyboardEvent('keydown', {
+					const keyEvent = new KeyboardEvent("keydown", {
 						code: keyCode,
 						key: key.textContent.toLowerCase(),
 						bubbles: true,
@@ -210,15 +210,15 @@ export class Controls {
 	 */
 	updateKeyHighlights() {
 		// Get all regular key elements
-		const keyElements = this.controlsElement.querySelectorAll('.key:not([data-toggle="true"])');
+		const keyElements = this.controlsElement.querySelectorAll(".key:not([data-toggle='true'])");
 
 		// Update each key's appearance
 		keyElements.forEach((key) => {
-			const keyCode = key.getAttribute('data-key');
+			const keyCode = key.getAttribute("data-key");
 			if (this.keysPressed[keyCode]) {
-				key.classList.add('pressed');
+				key.classList.add("pressed");
 			} else {
-				key.classList.remove('pressed');
+				key.classList.remove("pressed");
 			}
 		});
 	}
@@ -228,15 +228,15 @@ export class Controls {
 	 */
 	updateToggleKeys() {
 		// Get all toggle key elements
-		const toggleKeyElements = this.controlsElement.querySelectorAll('.toggle-key');
+		const toggleKeyElements = this.controlsElement.querySelectorAll(".toggle-key");
 
 		// Update each toggle key's appearance
 		toggleKeyElements.forEach((key) => {
-			const keyCode = key.getAttribute('data-key');
+			const keyCode = key.getAttribute("data-key");
 			if (this.toggleStates[keyCode]) {
-				key.classList.add('toggled');
+				key.classList.add("toggled");
 			} else {
-				key.classList.remove('toggled');
+				key.classList.remove("toggled");
 			}
 		});
 	}
@@ -246,7 +246,7 @@ export class Controls {
 	 */
 	show() {
 		if (!this.isMobileOrTouch) {
-			this.controlsElement.style.display = 'flex';
+			this.controlsElement.style.display = "flex";
 		}
 	}
 
@@ -254,7 +254,7 @@ export class Controls {
 	 * Hide the controls
 	 */
 	hide() {
-		this.controlsElement.style.display = 'none';
+		this.controlsElement.style.display = "none";
 	}
 
 	/**
@@ -279,12 +279,12 @@ export class Controls {
 	 */
 	dispose() {
 		if (this.keydownHandler) {
-			document.removeEventListener('keydown', this.keydownHandler);
+			document.removeEventListener("keydown", this.keydownHandler);
 			this.keydownHandler = null;
 		}
 
 		if (this.keyupHandler) {
-			document.removeEventListener('keyup', this.keyupHandler);
+			document.removeEventListener("keyup", this.keyupHandler);
 			this.keyupHandler = null;
 		}
 

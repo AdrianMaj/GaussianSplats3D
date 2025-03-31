@@ -1,7 +1,7 @@
 export const fadeElement = (element, out, displayStyle, duration, onComplete) => {
 	const startTime = performance.now();
 
-	let startOpacity = element.style.display === 'none' ? 0 : parseFloat(element.style.opacity);
+	let startOpacity = element.style.display === "none" ? 0 : parseFloat(element.style.opacity);
 	if (isNaN(startOpacity)) startOpacity = 1;
 
 	const interval = window.setInterval(() => {
@@ -23,7 +23,7 @@ export const fadeElement = (element, out, displayStyle, duration, onComplete) =>
 			element.style.display = displayStyle;
 			element.style.opacity = opacity;
 		} else {
-			element.style.display = 'none';
+			element.style.display = "none";
 		}
 
 		if (t >= 1) {
