@@ -415,8 +415,15 @@ export class Viewer {
 
 		this.setupControlsIntegration();
 
-		this.keyboardInputActive = true; // Add this state flag
-		this.orbitControlsEnabled = true; // Add this to track desired state
+		this.keyboardInputActive = true;
+		this.orbitControlsEnabled = true;
+
+		this.onKeyDown = this.onKeyDown.bind(this);
+
+		this.onMouseMove = this.onMouseMove.bind(this);
+		this.onMouseDown = this.onMouseDown.bind(this);
+		this.onMouseUp = this.onMouseUp.bind(this); // Bind this one too if it wasn't already
+		this.preventPageScroll = this.preventPageScroll.bind(this); // Bind this helper too
 
 		this.labelData = options.labels ?? labelsData ?? [];
 		this._uiVisible = undefined;
@@ -579,9 +586,16 @@ export class Viewer {
 	}
 
 	preventPageScroll(e) {
+		// Keep as method if bound in constructor
 		if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
-			// Check if the event target is NOT an input/textarea where these keys might be needed
-			if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+			const target = e.target;
+			if (
+				!(
+					target instanceof HTMLInputElement ||
+					target instanceof HTMLTextAreaElement ||
+					target instanceof HTMLSelectElement
+				)
+			) {
 				e.preventDefault();
 			}
 		}
@@ -594,26 +608,22 @@ export class Viewer {
 	onLabelModalOpen() {
 		console.log("Label modal opened, disabling controls.");
 		this.keyboardInputActive = false;
-		if (this.controls) {
-			this.orbitControlsEnabled = this.controls.enabled; // Store current state
+		if (this.controls && typeof this.controls.disconnect === "function") {
+			this.controls.disconnect();
+		} else if (this.controls) {
 			this.controls.enabled = false;
 		}
-		// Prevent scrolling the page with arrow keys when modal is open
 		window.addEventListener("keydown", this.preventPageScroll);
 	}
 
-	/**
-	 * Callback when the label modal is closed.
-	 * Re-enables viewer keyboard and mouse controls.
-	 */
 	onLabelModalClose() {
 		console.log("Label modal closed, enabling controls.");
 		this.keyboardInputActive = true;
-		if (this.controls) {
-			// Only re-enable if they were meant to be enabled before modal opened
-			this.controls.enabled = this.orbitControlsEnabled;
+		if (this.controls && typeof this.controls.connect === "function") {
+			this.controls.connect();
+		} else if (this.controls) {
+			this.controls.enabled = true;
 		}
-		// Allow page scrolling again
 		window.removeEventListener("keydown", this.preventPageScroll);
 	}
 
@@ -622,26 +632,35 @@ export class Viewer {
 	 */
 	setupLabels() {
 		// Only set up labels if we have the scene ready
+		console.log("Attempting to set up labels..."); // Log start
 		if (this.threeScene && this.camera) {
 			// Create callback options safely - ensure options exists first
 			const labelCallbacks = {
 				onLabelCreate: this.options?.labelOptions?.onLabelCreate,
 				onLabelUpdate: this.options?.labelOptions?.onLabelUpdate,
 				onLabelRemove: this.options?.labelOptions?.onLabelRemove,
-				onModalOpen: this.onLabelModalOpen.bind(this), // Pass bound method
-				onModalClose: this.onLabelModalClose.bind(this), // Pass bound method
+				onModalOpen: this.onLabelModalOpen.bind(this),
+				onModalClose: this.onLabelModalClose.bind(this),
 			};
 
-			// Create a new labels manager if one doesn't exist
 			if (!this.labelsManager) {
-				this.labelsManager = new FloatingLabels(this, this.labelData || [], labelCallbacks);
-				console.log("Labels initialized with modal callbacks.");
+				try {
+					this.labelsManager = new FloatingLabels(this, this.labelData || [], labelCallbacks);
+					console.log("Labels initialized successfully. labelsManager:", this.labelsManager); // Log success
+				} catch (error) {
+					console.error("Error initializing FloatingLabels:", error);
+					// Handle the error appropriately, maybe prevent further label operations
+				}
+			} else {
+				console.log("Labels manager already exists.");
 			}
 
 			// Add initial labels if any
 			if (this.labelData && this.labelData.length > 0 && this.labelsManager) {
 				this.labelsManager.addLabels(this.labelData);
 			}
+		} else {
+			console.warn("Cannot setup labels: threeScene or camera not ready.");
 		}
 	}
 
@@ -864,14 +883,12 @@ export class Viewer {
 
 	setupEventHandlers() {
 		if (this.useBuiltInControls && this.webXRMode === WebXRMode.None) {
-			this.mouseMoveListener = this.onMouseMove.bind(this);
-			this.renderer.domElement.addEventListener("pointermove", this.mouseMoveListener, false);
-			this.mouseDownListener = this.onMouseDown.bind(this);
-			this.renderer.domElement.addEventListener("pointerdown", this.mouseDownListener, false);
-			this.mouseUpListener = this.onMouseUp.bind(this);
-			this.renderer.domElement.addEventListener("pointerup", this.mouseUpListener, false);
-			this.keyDownListener = this.onKeyDown.bind(this);
-			window.addEventListener("keydown", this.keyDownListener, false);
+			// Remove previous listener assignments using .bind(this) directly here if they existed
+			// Now use the already bound methods from the constructor
+			this.renderer.domElement.addEventListener("pointermove", this.onMouseMove, false);
+			this.renderer.domElement.addEventListener("pointerdown", this.onMouseDown, false);
+			this.renderer.domElement.addEventListener("pointerup", this.onMouseUp, false); // Ensure this is added
+			window.addEventListener("keydown", this.onKeyDown, false); // Use the bound method directly
 		}
 	}
 
@@ -926,113 +943,159 @@ export class Viewer {
 		this.forceRenderNextFrame();
 	}
 
-	onKeyDown = (function () {
-		const forward = new THREE.Vector3();
-		const tempMatrixLeft = new THREE.Matrix4();
-		const tempMatrixRight = new THREE.Matrix4();
+	onKeyDown(e) {
+		// No IIFE needed
 
-		return function (e) {
-			if (!this.keyboardInputActive) {
-				// If modal is open, allow default browser behavior for inputs
-				// but don't process viewer shortcuts.
-				return;
-			}
-			forward.set(0, 0, -1);
-			forward.transformDirection(this.camera.matrixWorld);
-			tempMatrixLeft.makeRotationAxis(forward, Math.PI / 128);
-			tempMatrixRight.makeRotationAxis(forward, -Math.PI / 128);
-			switch (e.code) {
-				case "KeyG":
-					this.focalAdjustment += 0.02;
-					this.forceRenderNextFrame();
-					break;
-				case "KeyF":
-					this.focalAdjustment -= 0.02;
-					this.forceRenderNextFrame();
-					break;
-				case "ArrowLeft":
-					this.camera.up.transformDirection(tempMatrixLeft);
-					break;
-				case "ArrowRight":
-					this.camera.up.transformDirection(tempMatrixRight);
-					break;
-				case "KeyC":
-					this.showMeshCursor = !this.showMeshCursor;
-					break;
-				case "KeyU":
-					this.showControlPlane = !this.showControlPlane;
-					break;
-				case "KeyI":
-					this.showInfo = !this.showInfo;
-					if (this.showInfo) {
-						this.infoPanel.show();
-					} else {
-						this.infoPanel.hide();
-					}
-					// Update UI toggle state
-					if (this.controlsUI) this.controlsUI.updateToggleState("KeyI", this.showInfo);
-					break;
-				case "KeyO":
-					if (!this.usingExternalCamera) {
-						this.setOrthographicMode(!this.camera.isOrthographicCamera);
-						// Update UI toggle state
-						if (this.controlsUI) this.controlsUI.updateToggleState("KeyO", this.camera.isOrthographicCamera);
-					}
-					break;
-				case "KeyP":
-					if (!this.usingExternalCamera) {
-						this.splatMesh.setPointCloudModeEnabled(!this.splatMesh.getPointCloudModeEnabled());
-						// Update UI toggle state
-						if (this.controlsUI) {
-							this.controlsUI.updateToggleState("KeyP", this.splatMesh.getPointCloudModeEnabled());
-						}
-					}
-					break;
-				case "Equal":
-					if (!this.usingExternalCamera) {
-						this.splatMesh.setSplatScale(this.splatMesh.getSplatScale() + 0.05);
-					}
-					break;
-				case "Minus":
-					if (!this.usingExternalCamera) {
-						this.splatMesh.setSplatScale(Math.max(this.splatMesh.getSplatScale() - 0.05, 0.0));
-					}
-					break;
-				case "KeyZ":
-					this.toggleOrbitMode();
-					// Update UI toggle state
-					if (this.controlsUI) this.controlsUI.updateToggleState("KeyZ", this.orbitAroundFocalPoint);
-					break;
-				case "F1":
-					this.toggleUIVisibility();
-					e.preventDefault(); // Prevent default browser F1 behavior
-					break;
+		// Helper defined directly inside the method
+		const isEventTargetInLabelModal = (target) => {
+			// 'this' inside this arrow function correctly refers to the Viewer instance
+			// because it captures 'this' from the onKeyDown method's scope,
+			// and onKeyDown itself is bound to the Viewer instance.
 
-				// Add these new cases for label management
-				case "KeyL":
-					// Toggle label edit mode
-					if (this.labelsManager) {
-						const editMode = this.labelsManager.toggleEditMode();
-						if (editMode && !this.showMeshCursor) {
-							// Automatically show mesh cursor when entering edit mode
-							this.showMeshCursor = true;
-						}
-					}
-					break;
-				case "KeyN":
-					// Create new label at mesh cursor
-					if (
-						this.labelsManager &&
-						this.labelsManager.editMode &&
-						this.showMeshCursor &&
-						this.keyboardInputActive
-					) {
-						this.labelsManager.createLabelAtCursor();
-					}
-					break;
+			// --- Add a safety check AND logging ---
+			if (!this.labelsManager) {
+				console.warn("isEventTargetInLabelModal check skipped: this.labelsManager is not defined yet.");
+				return false;
 			}
+			if (!this.labelsManager.editUI) {
+				console.warn("isEventTargetInLabelModal check skipped: this.labelsManager.editUI is not defined.");
+				return false;
+			}
+			// --- End safety check ---
+
+			return this.labelsManager.editUI.contains(target);
 		};
-	})();
+
+		const target = e.target; // Get the target element
+
+		// --- The rest of the logic ---
+		if (isEventTargetInLabelModal(target)) {
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target instanceof HTMLSelectElement ||
+				target.isContentEditable
+			) {
+				console.log("Keydown target is input in modal, Viewer ignores.");
+				return; // Explicitly return and do nothing else
+			}
+			// If it's inside the modal but NOT an input (e.g., a button),
+			// let the code proceed to the keyboardInputActive check.
+		}
+
+		// ----- PRIORITY 2: Global Viewer Keyboard Input Disabled -----
+		// This is your existing check for when the modal is open but focus might be elsewhere
+		if (!this.keyboardInputActive) {
+			console.log(
+				"Keyboard input not active (modal likely open, focus not on input), skipping viewer handler.",
+			);
+			// Don't preventDefault here; maybe the modal itself needs the key (like Escape)
+			return;
+		}
+
+		console.log("Processing viewer keydown:", e.code);
+
+		const forward = new THREE.Vector3(0, 0, -1);
+		forward.transformDirection(this.camera.matrixWorld);
+		const tempMatrixLeft = new THREE.Matrix4().makeRotationAxis(forward, Math.PI / 128);
+		const tempMatrixRight = new THREE.Matrix4().makeRotationAxis(forward, -Math.PI / 128);
+
+		let preventDefault = false;
+
+		switch (e.code) {
+			case "KeyG":
+				this.focalAdjustment += 0.02;
+				this.forceRenderNextFrame();
+				break;
+			case "KeyF":
+				this.focalAdjustment -= 0.02;
+				this.forceRenderNextFrame();
+				break;
+			case "ArrowLeft":
+				this.camera.up.transformDirection(tempMatrixLeft);
+				break;
+			case "ArrowRight":
+				this.camera.up.transformDirection(tempMatrixRight);
+				break;
+			case "KeyC":
+				this.showMeshCursor = !this.showMeshCursor;
+				break;
+			case "KeyU":
+				this.showControlPlane = !this.showControlPlane;
+				break;
+			case "KeyI":
+				this.showInfo = !this.showInfo;
+				if (this.showInfo) {
+					this.infoPanel.show();
+				} else {
+					this.infoPanel.hide();
+				}
+				// Update UI toggle state
+				if (this.controlsUI) this.controlsUI.updateToggleState("KeyI", this.showInfo);
+				break;
+			case "KeyO":
+				if (!this.usingExternalCamera) {
+					this.setOrthographicMode(!this.camera.isOrthographicCamera);
+					// Update UI toggle state
+					if (this.controlsUI) this.controlsUI.updateToggleState("KeyO", this.camera.isOrthographicCamera);
+				}
+				break;
+			case "KeyP":
+				if (!this.usingExternalCamera) {
+					this.splatMesh.setPointCloudModeEnabled(!this.splatMesh.getPointCloudModeEnabled());
+					// Update UI toggle state
+					if (this.controlsUI) {
+						this.controlsUI.updateToggleState("KeyP", this.splatMesh.getPointCloudModeEnabled());
+					}
+				}
+				break;
+			case "Equal":
+				if (!this.usingExternalCamera) {
+					this.splatMesh.setSplatScale(this.splatMesh.getSplatScale() + 0.05);
+				}
+				break;
+			case "Minus":
+				if (!this.usingExternalCamera) {
+					this.splatMesh.setSplatScale(Math.max(this.splatMesh.getSplatScale() - 0.05, 0.0));
+				}
+				break;
+			case "KeyZ":
+				this.toggleOrbitMode();
+				// Update UI toggle state
+				if (this.controlsUI) this.controlsUI.updateToggleState("KeyZ", this.orbitAroundFocalPoint);
+				break;
+			case "F1":
+				this.toggleUIVisibility();
+				preventDefault = true;
+				break;
+
+			// Add these new cases for label management
+			case "KeyL":
+				// Toggle label edit mode
+				if (this.labelsManager) {
+					const editMode = this.labelsManager.toggleEditMode();
+					if (editMode && !this.showMeshCursor) {
+						this.showMeshCursor = true;
+					}
+				} else {
+					console.warn("KeyL pressed, but labelsManager not ready.");
+				}
+				break;
+			case "KeyN":
+				// Create new label at mesh cursor
+				if (this.labelsManager && this.labelsManager.editMode && this.showMeshCursor) {
+					this.labelsManager.createLabelAtCursor();
+				} else {
+					console.warn(
+						"KeyN pressed, but conditions not met (labelsManager ready? editMode active? cursor visible?).",
+					);
+				}
+				break;
+		}
+		if (preventDefault) {
+			e.preventDefault();
+		}
+	}
 
 	onMouseMove(mouse) {
 		this.mousePosition.set(mouse.offsetX, mouse.offsetY);
@@ -1227,9 +1290,7 @@ export class Viewer {
 		);
 	}
 
-	isDisposingOrDisposed() {
-		return this.disposing || this.disposed;
-	}
+	isDisposingOrDisposed() {}
 
 	addSplatSceneDownloadPromise(promise) {
 		this.splatSceneDownloadPromises[promise.id] = promise;
