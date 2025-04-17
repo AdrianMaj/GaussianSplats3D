@@ -13,11 +13,8 @@ export class FloatingLabels {
 		this.editMode = false;
 		this.selectedLabelId = null;
 
-		// Store callbacks
 		this.callbacks = {
-			onLabelCreate: callbacks.onLabelCreate,
-			onLabelUpdate: callbacks.onLabelUpdate,
-			onLabelRemove: callbacks.onLabelRemove,
+			onLabelsUpdate: callbacks.onLabelsUpdate, // The single update callback
 			onModalOpen: callbacks.onModalOpen,
 			onModalClose: callbacks.onModalClose,
 		};
@@ -39,6 +36,31 @@ export class FloatingLabels {
 
 		// Set up click handler for label selection
 		this.setupClickHandler();
+	}
+
+	// --- NEW Internal Method to Notify Viewer ---
+	/**
+	 * Gathers the current state of all labels and calls the onLabelsUpdate callback.
+	 * @private
+	 */
+	_notifyUpdate() {
+		if (this.callbacks.onLabelsUpdate) {
+			const allCurrentLabelsData = [];
+			this.labels.forEach((labelInstance, id) => {
+				allCurrentLabelsData.push({
+					id: id,
+					position: labelInstance.container.position.toArray(),
+					text: labelInstance.text,
+					options: labelInstance.options,
+				});
+			});
+			console.log(`[FloatingLabels] Notifying update with ${allCurrentLabelsData.length} labels.`);
+			try {
+				this.callbacks.onLabelsUpdate(allCurrentLabelsData);
+			} catch (e) {
+				console.error("[FloatingLabels] Error executing onLabelsUpdate callback:", e);
+			}
+		}
 	}
 
 	setupClickHandler() {
@@ -293,11 +315,13 @@ export class FloatingLabels {
 		return "#333333"; // Default fallback
 	}
 
-	hideEditUI() {
+	hideEditUI(calledAfterSave = false) {
+		// Added parameter
 		if (this.editUI.style.display !== "none") {
 			this.editUI.style.display = "none";
-			this.deselectLabel(); // Deselect when hiding
+			this.deselectLabel(calledAfterSave); // Pass flag
 
+			// *** Ensure modal close callback is called ***
 			if (this.callbacks.onModalClose) {
 				this.callbacks.onModalClose();
 			}
@@ -319,6 +343,8 @@ export class FloatingLabels {
 			connectorColor: document.getElementById("connector-color").value,
 			// depthTest: true, // Assuming default from getDefaultLabelOptions
 		};
+
+		let changed = false;
 
 		if (this.selectedLabelId) {
 			// --- Update Existing Label ---
@@ -351,40 +377,18 @@ export class FloatingLabels {
 
 				delete label.originalColor;
 				delete label.originalOpacity;
-				console.log(`[saveEditUIData] Cleared originalColor state for label ${this.selectedLabelId}`);
-
-				// Call update callback
-				if (this.callbacks.onLabelUpdate) {
-					const updatedLabel = this.labels.get(this.selectedLabelId); // Get potentially updated label object
-					const labelData = {
-						id: this.selectedLabelId,
-						position: updatedLabel.container.position.toArray(), // Position is the target point
-						text,
-						options: updatedLabel.options, // Pass the final merged options
-					};
-					this.callbacks.onLabelUpdate(labelData);
-				}
+				changed = true;
 			}
 		} else if (this.pendingCursorPosition) {
-			// --- Create New Label ---
 			const id = `label-${Date.now()}`;
 			const targetPosition = this.pendingCursorPosition.clone();
-
-			// Create label with the options read from the form
-			this.addLabel(id, targetPosition, text, currentOptions);
-
-			// Call create callback
-			if (this.callbacks.onLabelCreate) {
-				const newLabel = this.labels.get(id); // Get the created label
-				const labelData = {
-					id,
-					position: targetPosition.toArray(),
-					text,
-					options: newLabel.options, // Use options from the created label object
-				};
-				this.callbacks.onLabelCreate(labelData);
-			}
+			this.addLabel(id, targetPosition, text, currentOptions); // This will notify via its internal call
+			changed = true; // addLabel internally calls _notifyUpdate
 			this.pendingCursorPosition = null;
+		}
+
+		if (this.selectedLabelId && changed) {
+			this._notifyUpdate();
 		}
 
 		this.hideEditUI(true);
@@ -492,6 +496,7 @@ export class FloatingLabels {
 			this.selectedLabelId = null;
 		}
 	}
+
 	createLabelAtCursor() {
 		if (!this.editMode || !this.viewer.showMeshCursor) return false;
 
@@ -507,30 +512,45 @@ export class FloatingLabels {
 		return true;
 	}
 
-	addLabels(labelsData) {
+	addLabels(labelsData, notify = true) {
+		// Added notify flag
 		if (!labelsData || !Array.isArray(labelsData)) return;
+		let changed = false;
 		labelsData.forEach((labelData) => {
-			this.addLabel(labelData.id, labelData.position, labelData.text, labelData.options);
+			// Use internal addLabel which won't notify individually
+			const added = this._addLabelInternal(
+				labelData.id,
+				labelData.position,
+				labelData.text,
+				labelData.options,
+			);
+			if (added) changed = true;
 		});
+		// Notify once after all are added if requested
+		if (changed && notify) {
+			this._notifyUpdate();
+		}
 	}
 
 	addLabel(id, position, text, options = {}) {
-		if (this.labels.has(id)) {
-			this.removeLabel(id);
+		const label = this._addLabelInternal(id, position, text, options);
+		if (label) {
+			// Only notify if something was actually added/replaced
+			this._notifyUpdate();
 		}
+		return label;
+	}
 
+	_addLabelInternal(id, position, text, options = {}) {
+		if (this.labels.has(id)) {
+			this.removeLabel(id, false); // Remove existing without notifying yet
+		}
 		const targetPosition = Array.isArray(position) ? new THREE.Vector3(...position) : position.clone();
-		// Merge provided options with defaults BEFORE creating object
 		const finalOptions = { ...this.getDefaultLabelOptions(), ...options };
-		const label = this.createLabelObject(targetPosition, text, finalOptions); // Pass final options
+		const label = this.createLabelObject(targetPosition, text, finalOptions);
 		this.labels.set(id, label);
 		this.labelsGroup.add(label.container);
-		// **** ADD LOG ****
-		console.log(
-			`[addLabel ${id}] Label container added to labelsGroup. Group children: ${this.labelsGroup.children.length}, Group visible: ${this.labelsGroup.visible}`,
-		);
-
-		return label;
+		return label; // Return the created label object
 	}
 
 	createLabelObject(targetPosition, text, options = {}) {
@@ -974,27 +994,30 @@ export class FloatingLabels {
 		}
 	}
 
-	removeLabel(id) {
+	removeLabel(id, notify = true) {
+		// Added notify flag
 		const label = this.labels.get(id);
 		if (!label) return;
 
-		this.cleanupLabelElements(label); // Use helper for cleanup
-		if (label.container) {
-			// Recursively dispose of children's geometries/materials if container is complex
-			// For simple group, removing from parent is enough if children are handled
-			if (label.container.parent) label.container.parent.remove(label.container);
-		}
-		this.labels.delete(id);
+		this.cleanupLabelElements(label);
+		if (label.container?.parent) label.container.parent.remove(label.container);
+		const deleted = this.labels.delete(id);
 
-		if (this.callbacks.onLabelRemove) {
-			this.callbacks.onLabelRemove(id);
+		if (deleted && notify) {
+			this._notifyUpdate();
 		}
 	}
 
-	clearAllLabels() {
+	clearAllLabels(notify = true) {
+		// Added notify flag
+		const hadLabels = this.labels.size > 0;
 		const labelIds = Array.from(this.labels.keys());
 		for (const id of labelIds) {
-			this.removeLabel(id);
+			this.removeLabel(id, false); // Remove internally without individual notifications
+		}
+		// Notify once after clearing if requested and if there were labels to clear
+		if (hadLabels && notify) {
+			this._notifyUpdate();
 		}
 	}
 
@@ -1101,27 +1124,19 @@ export class FloatingLabels {
 	}
 
 	dispose() {
-		this.hideEditUI(); // Ensure UI is hidden and callbacks called
+		this.hideEditUI();
 		if (this.editUI?.parentNode) {
 			document.body.removeChild(this.editUI);
 			this.editUI = null;
 		}
-
-		// Clean up event listeners
 		if (this.viewer?.renderer?.domElement && this.clickHandler) {
 			this.viewer.renderer.domElement.removeEventListener("click", this.clickHandler);
 		}
-		this.clickHandler = null; // Remove reference
-
-		this.clearAllLabels(); // Remove all label objects and resources
-		if (this.labelsGroup) {
-			if (this.labelsGroup.parent) this.labelsGroup.parent.remove(this.labelsGroup);
-			this.labelsGroup = null;
-		}
+		this.clickHandler = null;
+		this.clearAllLabels(false); // Clear without final notification during dispose
+		if (this.labelsGroup?.parent) this.labelsGroup.parent.remove(this.labelsGroup);
+		this.labelsGroup = null;
 		this.labels.clear();
-
-		// TODO: Restore original viewer update if needed
-
 		this.viewer = null;
 		this.scene = null;
 		this.camera = null;

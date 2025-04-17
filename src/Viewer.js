@@ -83,6 +83,8 @@ const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
  * @property {{lookAt: number[], position: number[], label?: string}[]} [presets] - Array of preset configurations
  * @property {"admin"|"user"} [role="user"] - Role of the user
  * @property {Function} [onUpdate] - Callback function for when a preset is updated, takes presests array.
+ * @property {ViewerLabelData[]} [labels] - Initial label configurations.
+ * @property {Function} [onLabelsUpdate] - Callback for label changes (receives full labels array). **(This is the one we use)**
  */
 
 /**
@@ -94,6 +96,11 @@ export class Viewer {
 	 *
 	 * @param {ViewerOptions} options - Configuration options for the viewer
 	 */
+
+	onLabelsUpdateCallback = null; // Callback provided by React/user for label updates
+	initialLabelData = [];
+	labelsManager = null;
+
 	constructor(options = {}) {
 		// Parent element of the Three.js renderer canvas
 		// Can be an HTMLElement or a React ref's current property
@@ -390,7 +397,8 @@ export class Viewer {
 		this.onMouseUp = this.onMouseUp.bind(this); // Bind this one too if it wasn't already
 		this.preventPageScroll = this.preventPageScroll.bind(this); // Bind this helper too
 
-		this.labelData = options.labels ?? [];
+		this.onLabelsUpdateCallback = options.onLabelsUpdate;
+		this.initialLabelData = options.labels ?? [];
 		this._uiVisible = undefined;
 
 		this.orbitAroundFocalPoint =
@@ -596,36 +604,48 @@ export class Viewer {
 	 * Set up floating labels in the scene
 	 */
 	setupLabels() {
-		// Only set up labels if we have the scene ready
-		console.log("Attempting to set up labels..."); // Log start
-		if (this.threeScene && this.camera) {
-			// Create callback options safely - ensure options exists first
-			const labelCallbacks = {
-				onLabelCreate: this.options?.labelOptions?.onLabelCreate,
-				onLabelUpdate: this.options?.labelOptions?.onLabelUpdate,
-				onLabelRemove: this.options?.labelOptions?.onLabelRemove,
-				onModalOpen: this.onLabelModalOpen.bind(this),
-				onModalClose: this.onLabelModalClose.bind(this),
+		console.log("[Viewer] Attempting to set up labels...");
+		if (this.threeScene && this.camera && this.renderer) {
+			// Callbacks passed TO FloatingLabels instance
+			const internalLabelCallbacks = {
+				// *** NEW: Pass the viewer's handler function for the label manager's update notification ***
+				onLabelsUpdate: this.handleLabelsUpdateFromManager.bind(this),
+				// Pass through modal callbacks
+				onModalOpen: this.onLabelModalOpen, // Assumes already bound
+				onModalClose: this.onLabelModalClose, // Assumes already bound
 			};
 
 			if (!this.labelsManager) {
 				try {
-					this.labelsManager = new FloatingLabels(this, this.labelData || [], labelCallbacks);
-					console.log("Labels initialized successfully. labelsManager:", this.labelsManager); // Log success
+					// Pass initial data AND the *new* internal callbacks
+					this.labelsManager = new FloatingLabels(this, this.initialLabelData, internalLabelCallbacks);
+					console.log("[Viewer] Labels initialized successfully.");
 				} catch (error) {
-					console.error("Error initializing FloatingLabels:", error);
-					// Handle the error appropriately, maybe prevent further label operations
+					console.error("[Viewer] Error initializing FloatingLabels:", error);
 				}
 			} else {
-				console.log("Labels manager already exists.");
-			}
-
-			// Add initial labels if any
-			if (this.labelData && this.labelData.length > 0 && this.labelsManager) {
-				this.labelsManager.addLabels(this.labelData);
+				console.log("[Viewer] Labels manager already exists.");
+				// Update data if needed:
+				// this.labelsManager.clearAllLabels(false); // Don't notify from here
+				// this.labelsManager.addLabels(this.initialLabelData, false); // Don't notify from here
 			}
 		} else {
-			console.warn("Cannot setup labels: threeScene or camera not ready.");
+			console.warn("[Viewer] Cannot setup labels: threeScene, camera, or renderer not ready.");
+		}
+	}
+
+	handleLabelsUpdateFromManager(allCurrentLabelsData) {
+		console.log(`[Viewer] Received labels update from manager with ${allCurrentLabelsData.length} labels.`);
+		// Check if the external callback (from React) exists and call it
+		if (this.onLabelsUpdateCallback) {
+			console.log("[Viewer] Forwarding label update to external callback.");
+			try {
+				this.onLabelsUpdateCallback(allCurrentLabelsData);
+			} catch (e) {
+				console.error("[Viewer] Error executing onLabelsUpdateCallback:", e);
+			}
+		} else {
+			console.log("[Viewer] No external onLabelsUpdateCallback to call.");
 		}
 	}
 
