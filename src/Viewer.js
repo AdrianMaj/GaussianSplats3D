@@ -38,41 +38,6 @@ const FOCUS_MARKER_FADE_IN_SPEED = 10.0;
 const FOCUS_MARKER_FADE_OUT_SPEED = 2.5;
 const CONSECUTIVE_RENDERED_FRAMES_FOR_FPS_CALCULATION = 60;
 
-const labelsData = [
-	{
-		id: "microwave",
-		position: [2.5, 1.2, -3.0],
-		text: "This is a new microwave",
-		options: {
-			backgroundColor: "#2c3e50",
-			textColor: "#ecf0f1",
-			width: 2.0,
-			height: 0.6,
-		},
-	},
-	{
-		id: "refrigerator",
-		position: [-1.8, 2.0, -2.5],
-		text: "Energy efficient refrigerator",
-		options: {
-			backgroundColor: "#3498db",
-			textColor: "#ffffff",
-			showConnector: true, // Add a line pointing down
-			connectorLength: 0.8,
-		},
-	},
-	{
-		id: "counter",
-		position: [0.5, 0.8, -2.0],
-		text: "Granite countertop\\nInstalled 2023", // Use \n for line breaks
-		options: {
-			backgroundColor: "#8e44ad",
-			opacity: 0.9,
-			width: 2.2,
-		},
-	},
-];
-
 /**
  * @typedef {Object} ViewerOptions
  * @property {HTMLElement|Object} [rootElement] - Parent element of the Three.js renderer canvas. Can be an HTMLElement or a React ref's current property
@@ -425,7 +390,7 @@ export class Viewer {
 		this.onMouseUp = this.onMouseUp.bind(this); // Bind this one too if it wasn't already
 		this.preventPageScroll = this.preventPageScroll.bind(this); // Bind this helper too
 
-		this.labelData = options.labels ?? labelsData ?? [];
+		this.labelData = options.labels ?? [];
 		this._uiVisible = undefined;
 
 		this.orbitAroundFocalPoint =
