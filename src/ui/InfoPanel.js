@@ -5,24 +5,28 @@ export class InfoPanel {
 		this.infoCells = {};
 
 		const layout = [
-			['Camera position', 'cameraPosition'],
-			['Camera look-at', 'cameraLookAt'],
-			['Camera up', 'cameraUp'],
-			['Camera mode', 'orthographicCamera'],
-			['Cursor position', 'cursorPosition'],
-			['FPS', 'fps'],
-			['Rendering:', 'renderSplatCount'],
-			['Sort time', 'sortTime'],
-			['Render window', 'renderWindow'],
-			['Focal adjustment', 'focalAdjustment'],
-			['Splat scale', 'splatScale'],
-			['Point cloud mode', 'pointCloudMode'],
+			["Camera position", "cameraPosition"],
+			["Camera look-at", "cameraLookAt"],
+			["Camera up", "cameraUp"],
+			["Camera mode", "orthographicCamera"],
+			["Cursor position", "cursorPosition"],
+			["FPS", "fps"],
+			["Rendering:", "renderSplatCount"],
+			["Sort time", "sortTime"],
+			["Render window", "renderWindow"],
+			["Focal adjustment", "focalAdjustment"],
+			["Splat scale", "splatScale"],
+			["Point cloud mode", "pointCloudMode"],
 		];
 
-		const staticLayout = [['Toggle UI', 'F1 Key']];
+		const staticLayout = [
+			["Toggle UI", "F1 Key"],
+			["Toggle Label Edit Mode", "L Key"],
+			["Create new label", "N Key"],
+		];
 
-		this.infoPanelContainer = document.createElement('div');
-		const style = document.createElement('style');
+		this.infoPanelContainer = document.createElement("div");
+		const style = document.createElement("style");
 		style.innerHTML = `
 
             .infoPanel {
@@ -57,32 +61,32 @@ export class InfoPanel {
         `;
 		this.infoPanelContainer.append(style);
 
-		this.infoPanel = document.createElement('div');
-		this.infoPanel.className = 'infoPanel';
+		this.infoPanel = document.createElement("div");
+		this.infoPanel.className = "infoPanel";
 
-		const infoTable = document.createElement('div');
-		infoTable.style.display = 'table';
+		const infoTable = document.createElement("div");
+		infoTable.style.display = "table";
 
 		for (let layoutEntry of layout) {
-			const row = document.createElement('div');
-			row.style.display = 'table-row';
-			row.className = 'info-panel-row';
+			const row = document.createElement("div");
+			row.style.display = "table-row";
+			row.className = "info-panel-row";
 
-			const labelCell = document.createElement('div');
-			labelCell.style.display = 'table-cell';
+			const labelCell = document.createElement("div");
+			labelCell.style.display = "table-cell";
 			labelCell.innerHTML = `${layoutEntry[0]}: `;
-			labelCell.classList.add('info-panel-cell', 'label-cell');
+			labelCell.classList.add("info-panel-cell", "label-cell");
 
-			const spacerCell = document.createElement('div');
-			spacerCell.style.display = 'table-cell';
-			spacerCell.style.width = '10px';
-			spacerCell.innerHTML = ' ';
-			spacerCell.className = 'info-panel-cell';
+			const spacerCell = document.createElement("div");
+			spacerCell.style.display = "table-cell";
+			spacerCell.style.width = "10px";
+			spacerCell.innerHTML = " ";
+			spacerCell.className = "info-panel-cell";
 
-			const infoCell = document.createElement('div');
-			infoCell.style.display = 'table-cell';
-			infoCell.innerHTML = '';
-			infoCell.className = 'info-panel-cell';
+			const infoCell = document.createElement("div");
+			infoCell.style.display = "table-cell";
+			infoCell.innerHTML = "";
+			infoCell.className = "info-panel-cell";
 
 			this.infoCells[layoutEntry[1]] = infoCell;
 
@@ -94,25 +98,25 @@ export class InfoPanel {
 		}
 
 		for (let staticLayoutEntry of staticLayout) {
-			const row = document.createElement('div');
-			row.style.display = 'table-row';
-			row.className = 'info-panel-row';
+			const row = document.createElement("div");
+			row.style.display = "table-row";
+			row.className = "info-panel-row";
 
-			const labelCell = document.createElement('div');
-			labelCell.style.display = 'table-cell';
+			const labelCell = document.createElement("div");
+			labelCell.style.display = "table-cell";
 			labelCell.innerHTML = `${staticLayoutEntry[0]}: `;
-			labelCell.classList.add('info-panel-cell', 'label-cell');
+			labelCell.classList.add("info-panel-cell", "label-cell");
 
-			const spacerCell = document.createElement('div');
-			spacerCell.style.display = 'table-cell';
-			spacerCell.style.width = '10px';
-			spacerCell.innerHTML = ' ';
-			spacerCell.className = 'info-panel-cell';
+			const spacerCell = document.createElement("div");
+			spacerCell.style.display = "table-cell";
+			spacerCell.style.width = "10px";
+			spacerCell.innerHTML = " ";
+			spacerCell.className = "info-panel-cell";
 
-			const infoCell = document.createElement('div');
-			infoCell.style.display = 'table-cell';
+			const infoCell = document.createElement("div");
+			infoCell.style.display = "table-cell";
 			infoCell.innerHTML = `${staticLayoutEntry[1]}`;
-			infoCell.className = 'info-panel-cell';
+			infoCell.className = "info-panel-cell";
 
 			row.appendChild(labelCell);
 			row.appendChild(spacerCell);
@@ -123,13 +127,13 @@ export class InfoPanel {
 
 		this.infoPanel.appendChild(infoTable);
 		this.infoPanelContainer.append(this.infoPanel);
-		this.infoPanelContainer.style.display = 'none';
+		this.infoPanelContainer.style.display = "none";
 		this.container.appendChild(this.infoPanelContainer);
 
 		this.visible = false;
 	}
 
-	update = function(
+	update = function (
 		renderDimensions,
 		cameraPosition,
 		cameraLookAtPosition,
@@ -165,14 +169,14 @@ export class InfoPanel {
 			this.infoCells.cameraUp.innerHTML = cameraUpString;
 		}
 
-		this.infoCells.orthographicCamera.innerHTML = orthographicCamera ? 'Orthographic' : 'Perspective';
+		this.infoCells.orthographicCamera.innerHTML = orthographicCamera ? "Orthographic" : "Perspective";
 
 		if (meshCursorPosition) {
 			const cursPos = meshCursorPosition;
 			const cursorPosString = `${cursPos.x.toFixed(5)}, ${cursPos.y.toFixed(5)}, ${cursPos.z.toFixed(5)}`;
 			this.infoCells.cursorPosition.innerHTML = cursorPosString;
 		} else {
-			this.infoCells.cursorPosition.innerHTML = 'N/A';
+			this.infoCells.cursorPosition.innerHTML = "N/A";
 		}
 
 		this.infoCells.fps.innerHTML = currentFPS;
@@ -200,12 +204,12 @@ export class InfoPanel {
 	}
 
 	show() {
-		this.infoPanelContainer.style.display = 'block';
+		this.infoPanelContainer.style.display = "block";
 		this.visible = true;
 	}
 
 	hide() {
-		this.infoPanelContainer.style.display = 'none';
+		this.infoPanelContainer.style.display = "none";
 		this.visible = false;
 	}
 }

@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { Viewer } from './Viewer.js';
+import * as THREE from "three";
+import { Viewer } from "./Viewer.js";
 
 /**
  * DropInViewer: Wrapper for a Viewer instance that enables it to be added to a Three.js scene like

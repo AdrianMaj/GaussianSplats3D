@@ -413,18 +413,16 @@ export class Viewer {
 		});
 		this.presetsUI.hide();
 
-		this.labelData = options.labels ?? labelsData ?? [];
+		this.setupControlsIntegration();
 
+		this.keyboardInputActive = true; // Add this state flag
+		this.orbitControlsEnabled = true; // Add this to track desired state
+
+		this.labelData = options.labels ?? labelsData ?? [];
 		this._uiVisible = undefined;
 
 		this.orbitAroundFocalPoint =
 			options.orbitAroundFocalPoint !== undefined ? options.orbitAroundFocalPoint : true;
-
-		this.setupControlsIntegration();
-
-		if (this.initialized) {
-			this.setupLabels();
-		}
 
 		if (!this.dropInMode) this.init();
 	}
@@ -553,7 +551,6 @@ export class Viewer {
 		this.setupWebXR(this.webXRSessionInit);
 		this.setupControls();
 		this.setupEventHandlers();
-
 		this.threeScene = this.threeScene || new THREE.Scene();
 		this.sceneHelper = new SceneHelper(this.threeScene);
 		this.sceneHelper.setupMeshCursor();
@@ -576,13 +573,193 @@ export class Viewer {
 
 		this.setupLabels();
 
+		this.setupControlsIntegration();
+
 		this.initialized = true;
 	}
 
-	setupLabels() {
-		if (this.labelData && this.labelData.length > 0 && this.threeScene && this.camera) {
-			this.labelsManager = new FloatingLabels(this, this.labelData);
+	preventPageScroll(e) {
+		if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+			// Check if the event target is NOT an input/textarea where these keys might be needed
+			if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+				e.preventDefault();
+			}
 		}
+	}
+
+	/**
+	 * Callback when the label modal is opened.
+	 * Disables viewer keyboard and mouse controls.
+	 */
+	onLabelModalOpen() {
+		console.log("Label modal opened, disabling controls.");
+		this.keyboardInputActive = false;
+		if (this.controls) {
+			this.orbitControlsEnabled = this.controls.enabled; // Store current state
+			this.controls.enabled = false;
+		}
+		// Prevent scrolling the page with arrow keys when modal is open
+		window.addEventListener("keydown", this.preventPageScroll);
+	}
+
+	/**
+	 * Callback when the label modal is closed.
+	 * Re-enables viewer keyboard and mouse controls.
+	 */
+	onLabelModalClose() {
+		console.log("Label modal closed, enabling controls.");
+		this.keyboardInputActive = true;
+		if (this.controls) {
+			// Only re-enable if they were meant to be enabled before modal opened
+			this.controls.enabled = this.orbitControlsEnabled;
+		}
+		// Allow page scrolling again
+		window.removeEventListener("keydown", this.preventPageScroll);
+	}
+
+	/**
+	 * Set up floating labels in the scene
+	 */
+	setupLabels() {
+		// Only set up labels if we have the scene ready
+		if (this.threeScene && this.camera) {
+			// Create callback options safely - ensure options exists first
+			const labelCallbacks = {
+				onLabelCreate: this.options?.labelOptions?.onLabelCreate,
+				onLabelUpdate: this.options?.labelOptions?.onLabelUpdate,
+				onLabelRemove: this.options?.labelOptions?.onLabelRemove,
+				onModalOpen: this.onLabelModalOpen.bind(this), // Pass bound method
+				onModalClose: this.onLabelModalClose.bind(this), // Pass bound method
+			};
+
+			// Create a new labels manager if one doesn't exist
+			if (!this.labelsManager) {
+				this.labelsManager = new FloatingLabels(this, this.labelData || [], labelCallbacks);
+				console.log("Labels initialized with modal callbacks.");
+			}
+
+			// Add initial labels if any
+			if (this.labelData && this.labelData.length > 0 && this.labelsManager) {
+				this.labelsManager.addLabels(this.labelData);
+			}
+		}
+	}
+
+	/**
+	 * Add labels from an array of data
+	 * @param {Array} labelData - Array of label configurations
+	 */
+	addLabels(labelData) {
+		if (!labelData || !Array.isArray(labelData)) return;
+
+		// Store the new label data
+		this.labelData = [...(this.labelData || []), ...labelData];
+
+		// Add to the manager if it exists
+		if (this.labelsManager) {
+			this.labelsManager.addLabels(labelData);
+		} else {
+			// Create the manager if it doesn't exist yet
+			this.setupLabels();
+		}
+	}
+
+	/**
+	 * Add a single label
+	 * @param {string} id - Unique identifier
+	 * @param {Array|THREE.Vector3} position - 3D position
+	 * @param {string} text - Text content
+	 * @param {Object} options - Customization options
+	 */
+	addLabel(id, position, text, options = {}) {
+		// Add to the manager if it exists
+		if (this.labelsManager) {
+			this.labelsManager.addLabel(id, position, text, options);
+
+			// Store the new label data
+			this.labelData = this.labelData || [];
+			this.labelData.push({ id, position, text, options });
+		} else {
+			// Create the manager with this single label
+			this.labelData = [{ id, position, text, options }];
+			this.setupLabels();
+		}
+	}
+
+	/**
+	 * Remove a label by ID
+	 * @param {string} id - Label identifier
+	 */
+	removeLabel(id) {
+		if (this.labelsManager) {
+			this.labelsManager.removeLabel(id);
+
+			// Update stored label data
+			if (this.labelData) {
+				this.labelData = this.labelData.filter((label) => label.id !== id);
+			}
+		}
+	}
+
+	/**
+	 * Clear all labels
+	 */
+	clearAllLabels() {
+		if (this.labelsManager) {
+			this.labelsManager.clearAllLabels();
+			this.labelData = [];
+		}
+	}
+
+	/**
+	 * Show or hide all labels
+	 * @param {boolean} visible - Visibility state
+	 */
+	setLabelsVisible(visible) {
+		if (this.labelsManager) {
+			if (visible) {
+				this.labelsManager.show();
+			} else {
+				this.labelsManager.hide();
+			}
+		}
+	}
+
+	/**
+	 * Toggle labels edit mode
+	 * @returns {boolean} The new edit mode state
+	 */
+	toggleLabelsEditMode() {
+		if (this.labelsManager) {
+			return this.labelsManager.toggleEditMode();
+		}
+		return false;
+	}
+
+	// Don't forget to update your toggleUIVisibility method to include labels
+	toggleUIVisibility() {
+		this._uiVisible = this._uiVisible === undefined ? false : !this._uiVisible;
+
+		// Hide/show all UI components
+		if (this.controlsUI) {
+			this._uiVisible ? this.controlsUI.show() : this.controlsUI.hide();
+		}
+
+		if (this.presetsUI) {
+			this._uiVisible ? this.presetsUI.show() : this.presetsUI.hide();
+		}
+
+		if (this.gsVisionLogo) {
+			this._uiVisible ? this.gsVisionLogo.show() : this.gsVisionLogo.hide();
+		}
+
+		// Add this line to show/hide labels with other UI
+		if (this.labelsManager) {
+			this._uiVisible ? this.labelsManager.show() : this.labelsManager.hide();
+		}
+
+		// Force a render to update the display
+		this.forceRenderNextFrame();
 	}
 
 	setupCamera() {
@@ -642,10 +819,10 @@ export class Viewer {
 			} else if (this.webXRMode === WebXRMode.AR) {
 				this.rootElement.appendChild(ARButton.createButton(this.renderer, webXRSessionInit));
 			}
-			this.renderer.xr.addEventListener("sessionstart", (e) => {
+			this.renderer.xr.addEventListener("sessionstart", () => {
 				this.webXRActive = true;
 			});
-			this.renderer.xr.addEventListener("sessionend", (e) => {
+			this.renderer.xr.addEventListener("sessionend", () => {
 				this.webXRActive = false;
 			});
 			this.renderer.xr.enabled = true;
@@ -755,6 +932,11 @@ export class Viewer {
 		const tempMatrixRight = new THREE.Matrix4();
 
 		return function (e) {
+			if (!this.keyboardInputActive) {
+				// If modal is open, allow default browser behavior for inputs
+				// but don't process viewer shortcuts.
+				return;
+			}
 			forward.set(0, 0, -1);
 			forward.transformDirection(this.camera.matrixWorld);
 			tempMatrixLeft.makeRotationAxis(forward, Math.PI / 128);
@@ -824,6 +1006,29 @@ export class Viewer {
 				case "F1":
 					this.toggleUIVisibility();
 					e.preventDefault(); // Prevent default browser F1 behavior
+					break;
+
+				// Add these new cases for label management
+				case "KeyL":
+					// Toggle label edit mode
+					if (this.labelsManager) {
+						const editMode = this.labelsManager.toggleEditMode();
+						if (editMode && !this.showMeshCursor) {
+							// Automatically show mesh cursor when entering edit mode
+							this.showMeshCursor = true;
+						}
+					}
+					break;
+				case "KeyN":
+					// Create new label at mesh cursor
+					if (
+						this.labelsManager &&
+						this.labelsManager.editMode &&
+						this.showMeshCursor &&
+						this.keyboardInputActive
+					) {
+						this.labelsManager.createLabelAtCursor();
+					}
 					break;
 			}
 		};
@@ -1074,7 +1279,7 @@ export class Viewer {
 		}
 
 		if (options.progressiveLoad && this.splatMesh.scenes && this.splatMesh.scenes.length > 0) {
-			console.log('addSplatScene(): "progressiveLoad" option ignore because there are multiple splat scenes');
+			console.log("addSplatScene(): 'progressiveLoad' option ignore because there are multiple splat scenes");
 			options.progressiveLoad = false;
 		}
 
@@ -1103,7 +1308,7 @@ export class Viewer {
 						if (progressiveLoad) {
 							this.loadingSpinner.setMessageForTask(loadingUITaskId, "Downloading splats...");
 						} else {
-							const suffix = percentCompleteLabel ? `: ${percentCompleteLabel}` : `...`;
+							const suffix = percentCompleteLabel ? `: ${percentCompleteLabel}` : "...";
 							this.loadingSpinner.setMessageForTask(loadingUITaskId, `Downloading${suffix}`);
 						}
 					}
@@ -1322,7 +1527,7 @@ export class Viewer {
 			.catch((e) => {
 				this.clearSplatSceneDownloadAndBuildPromise();
 				this.removeSplatSceneDownloadPromise(splatSceneDownloadPromise);
-				const error = this.updateError(e, `Viewer::addSplatScene -> Could not load one or more scenes`);
+				const error = this.updateError(e, "Viewer::addSplatScene -> Could not load one or more scenes");
 				progressiveLoadFirstSectionBuildPromise.reject(error);
 				if (onDownloadException) onDownloadException(error);
 			});
@@ -1382,7 +1587,7 @@ export class Viewer {
 				if (loaderStatus === LoaderStatus.Downloading) {
 					this.loadingSpinner.setMessageForTask(
 						loadingUITaskId,
-						totalPercent == 100 ? `Download complete!` : `Downloading: ${percentLabel}`,
+						totalPercent == 100 ? "Download complete!" : `Downloading: ${percentLabel}`,
 					);
 				}
 			}
@@ -1433,7 +1638,7 @@ export class Viewer {
 					.catch((e) => {
 						if (showLoadingUI) this.loadingSpinner.removeTask(loadingUITaskId);
 						this.clearSplatSceneDownloadAndBuildPromise();
-						reject(this.updateError(e, `Viewer::addSplatScenes -> Could not load one or more splat scenes.`));
+						reject(this.updateError(e, "Viewer::addSplatScenes -> Could not load one or more splat scenes."));
 					})
 					.finally(() => {
 						this.removeSplatSceneDownloadPromise(downloadAndBuildPromise);
@@ -1952,6 +2157,10 @@ export class Viewer {
 	async dispose() {
 		if (this.isDisposingOrDisposed()) return this.disposePromise;
 
+		if (!this.keyboardInputActive) {
+			this.onLabelModalClose();
+		}
+
 		let waitPromises = [];
 		let promisesToAbort = [];
 		for (let promiseKey in this.splatSceneDownloadPromises) {
@@ -1988,6 +2197,10 @@ export class Viewer {
 			if (this.resizeObserver) {
 				this.resizeObserver.unobserve(this.rootElement);
 				this.resizeObserver = null;
+			}
+			if (this.labelsManager) {
+				this.labelsManager.dispose(); // Ensure label manager is disposed
+				this.labelsManager = null;
 			}
 			this.disposeSortWorker();
 			this.removeEventHandlers();
