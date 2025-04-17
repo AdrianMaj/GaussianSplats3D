@@ -1,7 +1,7 @@
-import * as THREE from 'three';
-import { UncompressedSplatArray } from './UncompressedSplatArray.js';
-import { clamp, getSphericalHarmonicsComponentCountForDegree } from '../Util.js';
-import { Constants } from '../Constants.js';
+import * as THREE from "three";
+import { UncompressedSplatArray } from "./UncompressedSplatArray.js";
+import { clamp, getSphericalHarmonicsComponentCountForDegree } from "../Util.js";
+import { Constants } from "../Constants.js";
 
 const DefaultSphericalHarmonics8BitCompressionRange = Constants.SphericalHarmonics8BitCompressionRange;
 const DefaultSphericalHarmonics8BitCompressionHalfRange = DefaultSphericalHarmonics8BitCompressionRange / 2.0;

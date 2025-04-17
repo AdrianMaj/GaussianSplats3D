@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
 const VectorRight = new THREE.Vector3(1, 0, 0);
 const VectorUp = new THREE.Vector3(0, 1, 0);

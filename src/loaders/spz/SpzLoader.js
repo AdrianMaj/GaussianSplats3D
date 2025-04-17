@@ -1,11 +1,11 @@
-import * as THREE from 'three';
-import { fetchWithProgress, delayedExecute } from '../../Util.js';
-import { SplatBuffer } from '../SplatBuffer.js';
-import { SplatBufferGenerator } from '../SplatBufferGenerator.js';
-import { LoaderStatus } from '../LoaderStatus.js';
-import { UncompressedSplatArray } from '../UncompressedSplatArray.js';
-import { decompressGzipped } from '../Compression.js';
-import { clamp } from '../../Util.js';
+import * as THREE from "three";
+import { fetchWithProgress, delayedExecute } from "../../Util.js";
+import { SplatBuffer } from "../SplatBuffer.js";
+import { SplatBufferGenerator } from "../SplatBufferGenerator.js";
+import { LoaderStatus } from "../LoaderStatus.js";
+import { UncompressedSplatArray } from "../UncompressedSplatArray.js";
+import { decompressGzipped } from "../Compression.js";
+import { clamp } from "../../Util.js";
 
 const SPZ_MAGIC = 1347635022;
 const FLAG_ANTIALIASED = 1;
@@ -294,7 +294,7 @@ function deserializePackedGaussians(buffer) {
 
 	// Validate header
 	if (header.magic !== SPZ_MAGIC) {
-		console.error('[SPZ ERROR] deserializePackedGaussians: header not found');
+		console.error("[SPZ ERROR] deserializePackedGaussians: header not found");
 		return null;
 	}
 	if (header.version < 1 || header.version > 2) {
@@ -353,11 +353,11 @@ function deserializePackedGaussians(buffer) {
 
 		// Verify we read the expected amount of data
 		if (currentOffset + result.sh.length !== buffer.byteLength) {
-			console.error('[SPZ ERROR] deserializePackedGaussians: incorrect buffer size');
+			console.error("[SPZ ERROR] deserializePackedGaussians: incorrect buffer size");
 			return null;
 		}
 	} catch (error) {
-		console.error('[SPZ ERROR] deserializePackedGaussians: read error', error);
+		console.error("[SPZ ERROR] deserializePackedGaussians: read error", error);
 		return null;
 	}
 
@@ -369,7 +369,7 @@ async function loadSpzPacked(compressedData) {
 		const decompressed = await decompressGzipped(compressedData);
 		return deserializePackedGaussians(decompressed.buffer);
 	} catch (error) {
-		console.error('[SPZ ERROR] loadSpzPacked: decompression error', error);
+		console.error("[SPZ ERROR] loadSpzPacked: decompression error", error);
 		return null;
 	}
 }
@@ -388,9 +388,9 @@ export class SpzLoader {
 		blockSize,
 		bucketSize,
 	) {
-		if (onProgress) onProgress(0, '0%', LoaderStatus.Downloading);
+		if (onProgress) onProgress(0, "0%", LoaderStatus.Downloading);
 		return fetchWithProgress(fileName, onProgress, true, headers).then((fileData) => {
-			if (onProgress) onProgress(0, '0%', LoaderStatus.Processing);
+			if (onProgress) onProgress(0, "0%", LoaderStatus.Processing);
 			return SpzLoader.loadFromFileData(
 				fileData,
 				minimumAlpha,

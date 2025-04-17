@@ -1,17 +1,17 @@
-import * as THREE from 'three';
-import { PlyParser } from './PlyParser.js';
-import { PlyParserUtils } from './PlyParserUtils.js';
-import { INRIAV1PlyParser } from './INRIAV1PlyParser.js';
-import { PlayCanvasCompressedPlyParser } from './PlayCanvasCompressedPlyParser.js';
-import { PlyFormat } from './PlyFormat.js';
-import { fetchWithProgress, delayedExecute, nativePromiseWithExtractedComponents } from '../../Util.js';
-import { SplatBuffer } from '../SplatBuffer.js';
-import { SplatBufferGenerator } from '../SplatBufferGenerator.js';
-import { LoaderStatus } from '../LoaderStatus.js';
-import { DirectLoadError } from '../DirectLoadError.js';
-import { Constants } from '../../Constants.js';
-import { UncompressedSplatArray } from '../UncompressedSplatArray.js';
-import { InternalLoadType } from '../InternalLoadType.js';
+import * as THREE from "three";
+import { PlyParser } from "./PlyParser.js";
+import { PlyParserUtils } from "./PlyParserUtils.js";
+import { INRIAV1PlyParser } from "./INRIAV1PlyParser.js";
+import { PlayCanvasCompressedPlyParser } from "./PlayCanvasCompressedPlyParser.js";
+import { PlyFormat } from "./PlyFormat.js";
+import { fetchWithProgress, delayedExecute, nativePromiseWithExtractedComponents } from "../../Util.js";
+import { SplatBuffer } from "../SplatBuffer.js";
+import { SplatBufferGenerator } from "../SplatBufferGenerator.js";
+import { LoaderStatus } from "../LoaderStatus.js";
+import { DirectLoadError } from "../DirectLoadError.js";
+import { Constants } from "../../Constants.js";
+import { UncompressedSplatArray } from "../UncompressedSplatArray.js";
+import { InternalLoadType } from "../InternalLoadType.js";
 
 function storeChunksInBuffer(chunks, buffer) {
 	let inBytes = 0;
@@ -102,7 +102,7 @@ export class PlyLoader {
 		let numBytesParsed = 0;
 		let numBytesDownloaded = 0;
 		let endOfBaseSplatDataBytes = 0;
-		let headerText = '';
+		let headerText = "";
 		let header = null;
 		let chunks = [];
 
@@ -152,8 +152,8 @@ export class PlyLoader {
 								outSphericalHarmonicsDegree > 0
 							) {
 								throw new DirectLoadError(
-									'PlyLoader.loadFromURL() -> Selected PLY format has spherical ' +
-										'harmonics data that cannot be progressively loaded.',
+									"PlyLoader.loadFromURL() -> Selected PLY format has spherical " +
+										"harmonics data that cannot be progressively loaded.",
 								);
 							}
 							maxSplatCount = header.vertexElement.count;
@@ -164,7 +164,7 @@ export class PlyLoader {
 						} else {
 							if (internalLoadType === InternalLoadType.ProgressiveToSplatBuffer) {
 								throw new DirectLoadError(
-									'PlyLoader.loadFromURL() -> Selected PLY format cannot be progressively loaded.',
+									"PlyLoader.loadFromURL() -> Selected PLY format cannot be progressively loaded.",
 								);
 							} else {
 								internalLoadType = InternalLoadType.DownloadBeforeProcessing;
@@ -371,11 +371,11 @@ export class PlyLoader {
 			if (onProgress) onProgress(percent, percentLabel, LoaderStatus.Downloading);
 		};
 
-		if (onProgress) onProgress(0, '0%', LoaderStatus.Downloading);
+		if (onProgress) onProgress(0, "0%", LoaderStatus.Downloading);
 		return fetchWithProgress(fileName, localOnProgress, false, headers).then(() => {
-			if (onProgress) onProgress(0, '0%', LoaderStatus.Processing);
+			if (onProgress) onProgress(0, "0%", LoaderStatus.Processing);
 			return loadPromise.promise.then((splatData) => {
-				if (onProgress) onProgress(100, '100%', LoaderStatus.Done);
+				if (onProgress) onProgress(100, "100%", LoaderStatus.Done);
 				if (internalLoadType === InternalLoadType.DownloadBeforeProcessing) {
 					const chunkDatas = chunks.map((chunk) => chunk.data);
 					return new Blob(chunkDatas).arrayBuffer().then((plyFileData) => {

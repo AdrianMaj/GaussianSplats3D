@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
 const _axis = new THREE.Vector3();
 
@@ -14,7 +14,7 @@ export class ArrowHelper extends THREE.Object3D {
 	) {
 		super();
 
-		this.type = 'ArrowHelper';
+		this.type = "ArrowHelper";
 
 		const lineGeometry = new THREE.CylinderGeometry(radius, radius, length, 32);
 		lineGeometry.translate(0, length / 2.0, 0);

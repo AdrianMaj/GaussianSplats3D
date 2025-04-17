@@ -1,7 +1,7 @@
-import * as THREE from 'three';
-import { Ray } from './Ray.js';
-import { Hit } from './Hit.js';
-import { SplatRenderMode } from '../SplatRenderMode.js';
+import * as THREE from "three";
+import { Ray } from "./Ray.js";
+import { Hit } from "./Hit.js";
+import { SplatRenderMode } from "../SplatRenderMode.js";
 
 export class Raycaster {
 	constructor(origin, direction, raycastAgainstTrueSplatEllipsoid = false) {
@@ -30,7 +30,7 @@ export class Raycaster {
 				this.ray.direction.set(0, 0, -1).transformDirection(camera.matrixWorld);
 				this.camera = camera;
 			} else {
-				throw new Error('Raycaster::setFromCameraAndScreenPosition() -> Unsupported camera type');
+				throw new Error("Raycaster::setFromCameraAndScreenPosition() -> Unsupported camera type");
 			}
 		};
 	})();

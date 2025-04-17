@@ -1,21 +1,21 @@
-import { UncompressedSplatArray } from '../UncompressedSplatArray.js';
-import { SplatBuffer } from '../SplatBuffer.js';
-import { clamp } from '../../Util.js';
-import * as THREE from 'three';
+import { UncompressedSplatArray } from "../UncompressedSplatArray.js";
+import { SplatBuffer } from "../SplatBuffer.js";
+import { clamp } from "../../Util.js";
+import * as THREE from "three";
 
 const HeaderMagicBytes = new Uint8Array([112, 108, 121, 10]);
 const HeaderEndTokenBytes = new Uint8Array([10, 101, 110, 100, 95, 104, 101, 97, 100, 101, 114, 10]);
-const HeaderEndToken = 'end_header';
+const HeaderEndToken = "end_header";
 
 const DataTypeMap = new Map([
-	['char', Int8Array],
-	['uchar', Uint8Array],
-	['short', Int16Array],
-	['ushort', Uint16Array],
-	['int', Int32Array],
-	['uint', Uint32Array],
-	['float', Float32Array],
-	['double', Float64Array],
+	["char", Int8Array],
+	["uchar", Uint8Array],
+	["short", Int16Array],
+	["ushort", Uint16Array],
+	["int", Int32Array],
+	["uint", Uint32Array],
+	["float", Float32Array],
+	["double", Float64Array],
 ]);
 
 const unpackUnorm = (value, bits) => {
@@ -75,37 +75,37 @@ export class PlayCanvasCompressedPlyParser {
 		let vertexElement;
 		let shElement;
 
-		const headerLines = headerText.split('\n').filter((line) => !line.startsWith('comment '));
+		const headerLines = headerText.split("\n").filter((line) => !line.startsWith("comment "));
 
 		let bytesPerSplat = 0;
 		let done = false;
 		for (let i = 1; i < headerLines.length; ++i) {
-			const words = headerLines[i].split(' ');
+			const words = headerLines[i].split(" ");
 
 			switch (words[0]) {
-				case 'format':
-					if (words[1] !== 'binary_little_endian') {
-						throw new Error('Unsupported ply format');
+				case "format":
+					if (words[1] !== "binary_little_endian") {
+						throw new Error("Unsupported ply format");
 					}
 					break;
-				case 'element':
+				case "element":
 					element = {
 						name: words[1],
 						count: parseInt(words[2], 10),
 						properties: [],
 						storageSizeBytes: 0,
 					};
-					if (element.name === 'chunk') chunkElement = element;
-					else if (element.name === 'vertex') vertexElement = element;
-					else if (element.name === 'sh') shElement = element;
+					if (element.name === "chunk") chunkElement = element;
+					else if (element.name === "vertex") vertexElement = element;
+					else if (element.name === "sh") shElement = element;
 					break;
-				case 'property': {
+				case "property": {
 					if (!DataTypeMap.has(words[1])) {
 						throw new Error(`Unrecognized property data type '${words[1]}' in ply header`);
 					}
 					const StorageType = DataTypeMap.get(words[1]);
 					const storageSizeByes = StorageType.BYTES_PER_ELEMENT * element.count;
-					if (element.name === 'vertex') bytesPerSplat += StorageType.BYTES_PER_ELEMENT;
+					if (element.name === "vertex") bytesPerSplat += StorageType.BYTES_PER_ELEMENT;
 					element.properties.push({
 						type: words[1],
 						name: words[2],
@@ -201,15 +201,15 @@ export class PlayCanvasCompressedPlyParser {
 		let endHeaderTokenOffset;
 
 		if (buf.length >= HeaderMagicBytes.length && !startsWith(buf, HeaderMagicBytes)) {
-			throw new Error('Invalid PLY header');
+			throw new Error("Invalid PLY header");
 		}
 
 		endHeaderTokenOffset = find(buf, HeaderEndTokenBytes);
 		if (endHeaderTokenOffset === -1) {
-			throw new Error('End of PLY header not found');
+			throw new Error("End of PLY header not found");
 		}
 
-		const headerText = new TextDecoder('ascii').decode(buf.slice(0, endHeaderTokenOffset));
+		const headerText = new TextDecoder("ascii").decode(buf.slice(0, endHeaderTokenOffset));
 
 		const {
 			chunkElement,
@@ -251,28 +251,28 @@ export class PlayCanvasCompressedPlyParser {
 
 				if (property.storage) {
 					switch (property.type) {
-						case 'char':
+						case "char":
 							property.storage[e] = dataView.getInt8(readOffset);
 							break;
-						case 'uchar':
+						case "uchar":
 							property.storage[e] = dataView.getUint8(readOffset);
 							break;
-						case 'short':
+						case "short":
 							property.storage[e] = dataView.getInt16(readOffset, true);
 							break;
-						case 'ushort':
+						case "ushort":
 							property.storage[e] = dataView.getUint16(readOffset, true);
 							break;
-						case 'int':
+						case "int":
 							property.storage[e] = dataView.getInt32(readOffset, true);
 							break;
-						case 'uint':
+						case "uint":
 							property.storage[e] = dataView.getUint32(readOffset, true);
 							break;
-						case 'float':
+						case "float":
 							property.storage[e] = dataView.getFloat32(readOffset, true);
 							break;
-						case 'double':
+						case "double":
 							property.storage[e] = dataView.getFloat64(readOffset, true);
 							break;
 					}
@@ -326,30 +326,30 @@ export class PlayCanvasCompressedPlyParser {
 		const storageArrays = {};
 
 		if (vertexElement) {
-			const minR = getElementPropStorage(chunkElement, 'min_r');
-			const minG = getElementPropStorage(chunkElement, 'min_g');
-			const minB = getElementPropStorage(chunkElement, 'min_b');
-			const maxR = getElementPropStorage(chunkElement, 'max_r');
-			const maxG = getElementPropStorage(chunkElement, 'max_g');
-			const maxB = getElementPropStorage(chunkElement, 'max_b');
-			const minX = getElementPropStorage(chunkElement, 'min_x');
-			const minY = getElementPropStorage(chunkElement, 'min_y');
-			const minZ = getElementPropStorage(chunkElement, 'min_z');
-			const maxX = getElementPropStorage(chunkElement, 'max_x');
-			const maxY = getElementPropStorage(chunkElement, 'max_y');
-			const maxZ = getElementPropStorage(chunkElement, 'max_z');
-			const minScaleX = getElementPropStorage(chunkElement, 'min_scale_x');
-			const minScaleY = getElementPropStorage(chunkElement, 'min_scale_y');
-			const minScaleZ = getElementPropStorage(chunkElement, 'min_scale_z');
-			const maxScaleX = getElementPropStorage(chunkElement, 'max_scale_x');
-			const maxScaleY = getElementPropStorage(chunkElement, 'max_scale_y');
-			const maxScaleZ = getElementPropStorage(chunkElement, 'max_scale_z');
-			const position = getElementPropStorage(vertexElement, 'packed_position');
-			const rotation = getElementPropStorage(vertexElement, 'packed_rotation');
-			const scale = getElementPropStorage(vertexElement, 'packed_scale');
-			const color = getElementPropStorage(vertexElement, 'packed_color');
+			const minR = getElementPropStorage(chunkElement, "min_r");
+			const minG = getElementPropStorage(chunkElement, "min_g");
+			const minB = getElementPropStorage(chunkElement, "min_b");
+			const maxR = getElementPropStorage(chunkElement, "max_r");
+			const maxG = getElementPropStorage(chunkElement, "max_g");
+			const maxB = getElementPropStorage(chunkElement, "max_b");
+			const minX = getElementPropStorage(chunkElement, "min_x");
+			const minY = getElementPropStorage(chunkElement, "min_y");
+			const minZ = getElementPropStorage(chunkElement, "min_z");
+			const maxX = getElementPropStorage(chunkElement, "max_x");
+			const maxY = getElementPropStorage(chunkElement, "max_y");
+			const maxZ = getElementPropStorage(chunkElement, "max_z");
+			const minScaleX = getElementPropStorage(chunkElement, "min_scale_x");
+			const minScaleY = getElementPropStorage(chunkElement, "min_scale_y");
+			const minScaleZ = getElementPropStorage(chunkElement, "min_scale_z");
+			const maxScaleX = getElementPropStorage(chunkElement, "max_scale_x");
+			const maxScaleY = getElementPropStorage(chunkElement, "max_scale_y");
+			const maxScaleZ = getElementPropStorage(chunkElement, "max_scale_z");
+			const position = getElementPropStorage(vertexElement, "packed_position");
+			const rotation = getElementPropStorage(vertexElement, "packed_rotation");
+			const scale = getElementPropStorage(vertexElement, "packed_scale");
+			const color = getElementPropStorage(vertexElement, "packed_color");
 
-			storageArrays['colorExtremes'] = {
+			storageArrays["colorExtremes"] = {
 				minR,
 				maxR,
 				minG,
@@ -357,7 +357,7 @@ export class PlayCanvasCompressedPlyParser {
 				minB,
 				maxB,
 			};
-			storageArrays['positionExtremes'] = {
+			storageArrays["positionExtremes"] = {
 				minX,
 				maxX,
 				minY,
@@ -365,7 +365,7 @@ export class PlayCanvasCompressedPlyParser {
 				minZ,
 				maxZ,
 			};
-			storageArrays['scaleExtremes'] = {
+			storageArrays["scaleExtremes"] = {
 				minScaleX,
 				maxScaleX,
 				minScaleY,
@@ -373,10 +373,10 @@ export class PlayCanvasCompressedPlyParser {
 				minScaleZ,
 				maxScaleZ,
 			};
-			storageArrays['position'] = position;
-			storageArrays['rotation'] = rotation;
-			storageArrays['scale'] = scale;
-			storageArrays['color'] = color;
+			storageArrays["position"] = position;
+			storageArrays["rotation"] = rotation;
+			storageArrays["scale"] = scale;
+			storageArrays["color"] = color;
 		}
 
 		if (shElement) {
@@ -390,7 +390,7 @@ export class PlayCanvasCompressedPlyParser {
 					break;
 				}
 			}
-			storageArrays['sh'] = shStorageArrays;
+			storageArrays["sh"] = shStorageArrays;
 		}
 
 		return storageArrays;

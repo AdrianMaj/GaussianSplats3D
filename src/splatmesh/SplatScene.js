@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
 /**
  * SplatScene: Descriptor for a single splat scene managed by an instance of SplatMesh.

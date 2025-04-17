@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-import { ArrowHelper } from './ArrowHelper.js';
-import { disposeAllMeshes } from './Util.js';
+import * as THREE from "three";
+import { ArrowHelper } from "./ArrowHelper.js";
+import { disposeAllMeshes } from "./Util.js";
 
 export class SceneHelper {
 	constructor(threeScene) {
@@ -36,11 +36,11 @@ export class SceneHelper {
 	setupRenderTargetCopyObjects() {
 		const uniforms = {
 			sourceColorTexture: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sourceDepthTexture: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 		};
@@ -335,7 +335,7 @@ export class SceneHelper {
 
 		const uniforms = {
 			color: {
-				type: 'v3',
+				type: "v3",
 				value: new THREE.Color(color),
 			},
 		};
@@ -416,15 +416,15 @@ export class SceneHelper {
 
 		const uniforms = {
 			color: {
-				type: 'v3',
+				type: "v3",
 				value: new THREE.Color(color),
 			},
 			realFocusPosition: {
-				type: 'v3',
+				type: "v3",
 				value: new THREE.Vector3(),
 			},
 			viewport: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(),
 			},
 			opacity: {

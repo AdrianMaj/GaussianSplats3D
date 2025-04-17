@@ -1,13 +1,13 @@
-import * as THREE from 'three';
-import { SplatBuffer } from '../SplatBuffer.js';
-import { SplatBufferGenerator } from '../SplatBufferGenerator.js';
-import { SplatParser } from './SplatParser.js';
-import { fetchWithProgress, delayedExecute, nativePromiseWithExtractedComponents } from '../../Util.js';
-import { UncompressedSplatArray } from '../UncompressedSplatArray.js';
-import { LoaderStatus } from '../LoaderStatus.js';
-import { DirectLoadError } from '../DirectLoadError.js';
-import { Constants } from '../../Constants.js';
-import { InternalLoadType } from '../InternalLoadType.js';
+import * as THREE from "three";
+import { SplatBuffer } from "../SplatBuffer.js";
+import { SplatBufferGenerator } from "../SplatBufferGenerator.js";
+import { SplatParser } from "./SplatParser.js";
+import { fetchWithProgress, delayedExecute, nativePromiseWithExtractedComponents } from "../../Util.js";
+import { UncompressedSplatArray } from "../UncompressedSplatArray.js";
+import { LoaderStatus } from "../LoaderStatus.js";
+import { DirectLoadError } from "../DirectLoadError.js";
+import { Constants } from "../../Constants.js";
+import { InternalLoadType } from "../InternalLoadType.js";
 
 function finalize(
 	splatData,
@@ -89,7 +89,7 @@ export class SplatLoader {
 
 			if (!fileSize) {
 				if (progressiveLoadToSplatBuffer) {
-					throw new DirectLoadError('Cannon directly load .splat because no file size info is available.');
+					throw new DirectLoadError("Cannon directly load .splat because no file size info is available.");
 				} else {
 					internalLoadType = InternalLoadType.DownloadBeforeProcessing;
 					return;
@@ -194,11 +194,11 @@ export class SplatLoader {
 			if (onProgress) onProgress(percent, percentStr, LoaderStatus.Downloading);
 		};
 
-		if (onProgress) onProgress(0, '0%', LoaderStatus.Downloading);
+		if (onProgress) onProgress(0, "0%", LoaderStatus.Downloading);
 		return fetchWithProgress(fileName, localOnProgress, false, headers).then(() => {
-			if (onProgress) onProgress(0, '0%', LoaderStatus.Processing);
+			if (onProgress) onProgress(0, "0%", LoaderStatus.Processing);
 			return loadPromise.promise.then((splatData) => {
-				if (onProgress) onProgress(100, '100%', LoaderStatus.Done);
+				if (onProgress) onProgress(100, "100%", LoaderStatus.Done);
 				if (internalLoadType === InternalLoadType.DownloadBeforeProcessing) {
 					return new Blob(chunks).arrayBuffer().then((splatData) => {
 						return SplatLoader.loadFromFileData(

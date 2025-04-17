@@ -1,4 +1,4 @@
-import { fadeElement } from './Util.js';
+import { fadeElement } from "./Util.js";
 
 const STANDARD_FADE_DURATION = 500;
 
@@ -9,19 +9,19 @@ export class LoadingSpinner {
 		this.taskIDGen = 0;
 		this.elementID = LoadingSpinner.elementIDGen++;
 		this.tasks = [];
-		this.message = message || 'Loading...';
+		this.message = message || "Loading...";
 		this.container = container || document.body;
 
-		this.spinnerContainerOuter = document.createElement('div');
+		this.spinnerContainerOuter = document.createElement("div");
 		this.spinnerContainerOuter.className = `spinnerOuterContainer${this.elementID}`;
-		this.spinnerContainerOuter.style.display = 'none';
+		this.spinnerContainerOuter.style.display = "none";
 
 		// Create the main spinner containers
-		this.spinnerContainerPrimary = document.createElement('div');
+		this.spinnerContainerPrimary = document.createElement("div");
 		this.spinnerContainerPrimary.className = `spinnerContainerPrimary${this.elementID}`;
 
 		// Create the logo container
-		this.logoContainer = document.createElement('div');
+		this.logoContainer = document.createElement("div");
 		this.logoContainer.className = `logoContainer${this.elementID}`;
 
 		// Add the SVG logo
@@ -73,7 +73,7 @@ export class LoadingSpinner {
         `;
 
 		// Create message container
-		this.messageContainerPrimary = document.createElement('div');
+		this.messageContainerPrimary = document.createElement("div");
 		this.messageContainerPrimary.className = `messageContainer${this.elementID} messageContainerPrimary${this.elementID}`;
 		this.messageContainerPrimary.innerHTML = this.message;
 
@@ -82,16 +82,16 @@ export class LoadingSpinner {
 		this.spinnerContainerPrimary.appendChild(this.messageContainerPrimary);
 
 		// Create minimized version
-		this.spinnerContainerMin = document.createElement('div');
+		this.spinnerContainerMin = document.createElement("div");
 		this.spinnerContainerMin.className = `spinnerContainerMin${this.elementID}`;
 
 		// Create smaller logo container for minimized version
-		this.logoContainerMin = document.createElement('div');
+		this.logoContainerMin = document.createElement("div");
 		this.logoContainerMin.className = `logoContainerMin${this.elementID}`;
 		this.logoContainerMin.innerHTML = this.logoContainer.innerHTML;
 
 		// Create message container for minimized version
-		this.messageContainerMin = document.createElement('div');
+		this.messageContainerMin = document.createElement("div");
 		this.messageContainerMin.className = `messageContainer${this.elementID} messageContainerMin${this.elementID}`;
 		this.messageContainerMin.innerHTML = this.message;
 
@@ -104,7 +104,7 @@ export class LoadingSpinner {
 		this.spinnerContainerOuter.appendChild(this.spinnerContainerMin);
 
 		// Create and append styles
-		const style = document.createElement('style');
+		const style = document.createElement("style");
 		style.innerHTML = `
             .spinnerOuterContainer${this.elementID} {
                 width: 100%;
@@ -283,12 +283,12 @@ export class LoadingSpinner {
 	}
 
 	show() {
-		this.spinnerContainerOuter.style.display = 'block';
+		this.spinnerContainerOuter.style.display = "block";
 		this.visible = true;
 	}
 
 	hide() {
-		this.spinnerContainerOuter.style.display = 'none';
+		this.spinnerContainerOuter.style.display = "none";
 		this.visible = false;
 	}
 
@@ -306,7 +306,7 @@ export class LoadingSpinner {
 	setMinimized(minimized, instant) {
 		const showHideSpinner = (element, show, instant, displayStyle, fadeTransitionsIndex) => {
 			if (instant) {
-				element.style.display = show ? displayStyle : 'none';
+				element.style.display = show ? displayStyle : "none";
 			} else {
 				this.fadeTransitions[fadeTransitionsIndex] = fadeElement(
 					element,
@@ -319,8 +319,8 @@ export class LoadingSpinner {
 				);
 			}
 		};
-		showHideSpinner(this.spinnerContainerPrimary, !minimized, instant, 'flex', 0);
-		showHideSpinner(this.spinnerContainerMin, minimized, instant, 'flex', 1);
+		showHideSpinner(this.spinnerContainerPrimary, !minimized, instant, "flex", 0);
+		showHideSpinner(this.spinnerContainerMin, minimized, instant, "flex", 1);
 		this.minimized = minimized;
 	}
 

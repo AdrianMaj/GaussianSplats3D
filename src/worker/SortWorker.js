@@ -1,9 +1,9 @@
-import SorterWasm from './sorter.wasm';
-import SorterWasmNoSIMD from './sorter_no_simd.wasm';
-import SorterWasmNonShared from './sorter_non_shared.wasm';
-import SorterWasmNoSIMDNonShared from './sorter_no_simd_non_shared.wasm';
-import { isIOS, getIOSSemever } from '../Util.js';
-import { Constants } from '../Constants.js';
+import SorterWasm from "./sorter.wasm";
+import SorterWasmNoSIMD from "./sorter_no_simd.wasm";
+import SorterWasmNonShared from "./sorter_non_shared.wasm";
+import SorterWasmNoSIMDNonShared from "./sorter_no_simd_non_shared.wasm";
+import { isIOS, getIOSSemever } from "../Util.js";
+import { Constants } from "../Constants.js";
 
 function sortWorker(self) {
 	let wasmInstance;
@@ -261,8 +261,8 @@ export function createSortWorker(
 ) {
 	const worker = new Worker(
 		URL.createObjectURL(
-			new Blob(['(', sortWorker.toString(), ')(self)'], {
-				type: 'application/javascript',
+			new Blob(["(", sortWorker.toString(), ")(self)"], {
+				type: "application/javascript",
 			}),
 		),
 	);

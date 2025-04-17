@@ -1,4 +1,4 @@
-import { AbortablePromise, AbortedPromiseError } from './AbortablePromise.js';
+import { AbortablePromise, AbortedPromiseError } from "./AbortablePromise.js";
 
 export const floatToHalf = (function() {
 	const floatView = new Float32Array(1);
@@ -83,7 +83,7 @@ export const fetchWithProgress = function(path, onProgress, saveChunks = true, h
 
 				const reader = data.body.getReader();
 				let bytesDownloaded = 0;
-				let _fileSize = data.headers.get('Content-Length');
+				let _fileSize = data.headers.get("Content-Length");
 				let fileSize = _fileSize ? parseInt(_fileSize) : undefined;
 
 				const chunks = [];
@@ -92,7 +92,7 @@ export const fetchWithProgress = function(path, onProgress, saveChunks = true, h
 					try {
 						const { value: chunk, done } = await reader.read();
 						if (done) {
-							localOnProgress(100, '100%', chunk, fileSize);
+							localOnProgress(100, "100%", chunk, fileSize);
 							if (saveChunks) {
 								const buffer = new Blob(chunks).arrayBuffer();
 								resolve(buffer);
@@ -168,7 +168,7 @@ export const getSphericalHarmonicsComponentCountForDegree = (sphericalHarmonicsD
 	} else if (sphericalHarmonicsDegree === 3) {
 		shCoeffPerSplat = 45;
 	} else if (sphericalHarmonicsDegree > 3) {
-		throw new Error('getSphericalHarmonicsComponentCountForDegree() -> Invalid spherical harmonics degree');
+		throw new Error("getSphericalHarmonicsComponentCountForDegree() -> Invalid spherical harmonics degree");
 	}
 	return shCoeffPerSplat;
 };
@@ -218,7 +218,7 @@ class Semver {
 
 export function isIOS() {
 	const ua = navigator.userAgent;
-	return ua.indexOf('iPhone') > 0 || ua.indexOf('iPad') > 0;
+	return ua.indexOf("iPhone") > 0 || ua.indexOf("iPad") > 0;
 }
 
 export function getIOSSemever() {

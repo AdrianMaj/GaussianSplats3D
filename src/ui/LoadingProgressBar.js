@@ -5,22 +5,22 @@ export class LoadingProgressBar {
 	 * @param {string} [barColor="black"] - Fill color for the progress
 	 * @param {string} [backgroundColor="white"] - Background color
 	 */
-	constructor(container, barColor, backgroundColor = 'white') {
+	constructor(container, barColor, backgroundColor = "white") {
 		this.container = container || document.body;
 		this.barColor = barColor;
 		this.backgroundColor = backgroundColor;
 
 		// Create the main container
-		this.progressBar = document.createElement('div');
-		this.progressBar.className = 'progress-bar-container';
-		this.progressBar.style.display = 'none';
+		this.progressBar = document.createElement("div");
+		this.progressBar.className = "progress-bar-container";
+		this.progressBar.style.display = "none";
 
 		// Create loading fill element
-		this.loadingFill = document.createElement('div');
-		this.loadingFill.className = 'loading-fill';
+		this.loadingFill = document.createElement("div");
+		this.loadingFill.className = "loading-fill";
 
-		this.progressBarBorder = document.createElement('div');
-		this.progressBarBorder.className = 'progress-bar-container progress-bar-container-border';
+		this.progressBarBorder = document.createElement("div");
+		this.progressBarBorder.className = "progress-bar-container progress-bar-container-border";
 
 		// Add to the container
 		this.progressBar.appendChild(this.loadingFill);
@@ -40,7 +40,7 @@ export class LoadingProgressBar {
         `);
 
 		// Apply styles
-		const style = document.createElement('style');
+		const style = document.createElement("style");
 		style.innerHTML = `
             .progress-bar-container {
                 position: fixed;
@@ -48,7 +48,7 @@ export class LoadingProgressBar {
                 left: 50%;
                 transform: translateX(-50%);
                 width: 300px;
-                background-color: ${this.backgroundColor ?? 'white'};
+                background-color: ${this.backgroundColor ?? "white"};
                 height: 60px;
                 z-index: 9999;
                 -webkit-mask: url("data:image/svg+xml;charset=utf8,${svgMask}") no-repeat center;
@@ -61,7 +61,7 @@ export class LoadingProgressBar {
             .loading-fill {
                 width: 100%;
                 height: 100%;
-                background-color: ${this.barColor ?? '#8200DB'};
+                background-color: ${this.barColor ?? "#8200DB"};
                 transform: scaleX(0);
                 transform-origin: left;
                 transition: transform 0.3s ease-out;
@@ -76,14 +76,14 @@ export class LoadingProgressBar {
 	 * Shows the loading progress bar
 	 */
 	show() {
-		this.progressBar.style.display = 'block';
+		this.progressBar.style.display = "block";
 	}
 
 	/**
 	 * Hides the loading progress bar
 	 */
 	hide() {
-		this.progressBar.style.display = 'none';
+		this.progressBar.style.display = "none";
 	}
 
 	/**

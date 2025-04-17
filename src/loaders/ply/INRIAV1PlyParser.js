@@ -1,28 +1,28 @@
-import * as THREE from 'three';
-import { clamp } from '../../Util.js';
-import { UncompressedSplatArray } from '../UncompressedSplatArray.js';
-import { SplatBuffer } from '../SplatBuffer.js';
-import { PlyParserUtils } from './PlyParserUtils.js';
+import * as THREE from "three";
+import { clamp } from "../../Util.js";
+import { UncompressedSplatArray } from "../UncompressedSplatArray.js";
+import { SplatBuffer } from "../SplatBuffer.js";
+import { PlyParserUtils } from "./PlyParserUtils.js";
 
 const BaseFieldNamesToRead = [
-	'scale_0',
-	'scale_1',
-	'scale_2',
-	'rot_0',
-	'rot_1',
-	'rot_2',
-	'rot_3',
-	'x',
-	'y',
-	'z',
-	'f_dc_0',
-	'f_dc_1',
-	'f_dc_2',
-	'opacity',
-	'red',
-	'green',
-	'blue',
-	'f_rest_0',
+	"scale_0",
+	"scale_1",
+	"scale_2",
+	"rot_0",
+	"rot_1",
+	"rot_2",
+	"rot_3",
+	"x",
+	"y",
+	"z",
+	"f_dc_0",
+	"f_dc_1",
+	"f_dc_2",
+	"opacity",
+	"red",
+	"green",
+	"blue",
+	"f_rest_0",
 ];
 
 const BaseFieldsToReadIndexes = BaseFieldNamesToRead.map((e, i) => i);
@@ -52,7 +52,7 @@ export class INRIAV1PlyParser {
 	static decodeHeaderLines(headerLines) {
 		let shLineCount = 0;
 		headerLines.forEach((line) => {
-			if (line.includes('f_rest_')) shLineCount++;
+			if (line.includes("f_rest_")) shLineCount++;
 		});
 
 		let shFieldsToReadCount = 0;

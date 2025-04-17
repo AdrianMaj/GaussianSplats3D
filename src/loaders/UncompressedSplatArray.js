@@ -1,4 +1,4 @@
-import { getSphericalHarmonicsComponentCountForDegree } from '../Util.js';
+import { getSphericalHarmonicsComponentCountForDegree } from "../Util.js";
 
 const BASE_COMPONENT_COUNT = 14;
 

@@ -1,7 +1,7 @@
-import { SplatBuffer } from '../SplatBuffer.js';
-import { fetchWithProgress, delayedExecute, nativePromiseWithExtractedComponents } from '../../Util.js';
-import { LoaderStatus } from '../LoaderStatus.js';
-import { Constants } from '../../Constants.js';
+import { SplatBuffer } from "../SplatBuffer.js";
+import { fetchWithProgress, delayedExecute, nativePromiseWithExtractedComponents } from "../../Util.js";
+import { LoaderStatus } from "../LoaderStatus.js";
+import { Constants } from "../../Constants.js";
 
 export class KSplatLoader {
 	static checkVersion(buffer) {
@@ -182,7 +182,7 @@ export class KSplatLoader {
 						onSectionBuilt(directLoadSplatBuffer, loadComplete);
 
 						const percentComplete = (numBytesProgressivelyLoaded / totalBytesToDownload) * 100;
-						const percentLabel = percentComplete.toFixed(2) + '%';
+						const percentLabel = percentComplete.toFixed(2) + "%";
 
 						if (externalOnProgress) {
 externalOnProgress(percentComplete, percentLabel, LoaderStatus.Downloading);
@@ -218,12 +218,12 @@ externalOnProgress(percentComplete, percentLabel, LoaderStatus.Downloading);
 
 		return fetchWithProgress(fileName, localOnProgress, !progressiveLoadToSplatBuffer, headers).then(
 			(fullBuffer) => {
-				if (externalOnProgress) externalOnProgress(0, '0%', LoaderStatus.Processing);
+				if (externalOnProgress) externalOnProgress(0, "0%", LoaderStatus.Processing);
 				const loadPromise = progressiveLoadToSplatBuffer ?
 					directLoadPromise.promise :
 					KSplatLoader.loadFromFileData(fullBuffer);
 				return loadPromise.then((splatBuffer) => {
-					if (externalOnProgress) externalOnProgress(100, '100%', LoaderStatus.Done);
+					if (externalOnProgress) externalOnProgress(100, "100%", LoaderStatus.Done);
 					return splatBuffer;
 				});
 			},
@@ -242,11 +242,11 @@ externalOnProgress(percentComplete, percentLabel, LoaderStatus.Downloading);
 
 		return function(splatBuffer, fileName) {
 			const blob = new Blob([splatBuffer.bufferData], {
-				type: 'application/octet-stream',
+				type: "application/octet-stream",
 			});
 
 			if (!downLoadLink) {
-				downLoadLink = document.createElement('a');
+				downLoadLink = document.createElement("a");
 				document.body.appendChild(downLoadLink);
 			}
 			downLoadLink.download = fileName;

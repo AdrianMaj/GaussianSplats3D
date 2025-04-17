@@ -4,8 +4,8 @@ function WebGLCapabilities(gl, extensions, parameters) {
 	function getMaxAnisotropy() {
 		if (maxAnisotropy !== undefined) return maxAnisotropy;
 
-		if (extensions.has('EXT_texture_filter_anisotropic') === true) {
-			const extension = extensions.get('EXT_texture_filter_anisotropic');
+		if (extensions.has("EXT_texture_filter_anisotropic") === true) {
+			const extension = extensions.get("EXT_texture_filter_anisotropic");
 
 			maxAnisotropy = gl.getParameter(extension.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
 		} else {
@@ -16,41 +16,41 @@ function WebGLCapabilities(gl, extensions, parameters) {
 	}
 
 	function getMaxPrecision(precision) {
-		if (precision === 'highp') {
+		if (precision === "highp") {
 			if (
 				gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT).precision > 0 &&
 				gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT).precision > 0
 			) {
-				return 'highp';
+				return "highp";
 			}
 
-			precision = 'mediump';
+			precision = "mediump";
 		}
 
-		if (precision === 'mediump') {
+		if (precision === "mediump") {
 			if (
 				gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.MEDIUM_FLOAT).precision > 0 &&
 				gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.MEDIUM_FLOAT).precision > 0
 			) {
-				return 'mediump';
+				return "mediump";
 			}
 		}
 
-		return 'lowp';
+		return "lowp";
 	}
 
 	const isWebGL2 =
-		typeof WebGL2RenderingContext !== 'undefined' && gl.constructor.name === 'WebGL2RenderingContext';
+		typeof WebGL2RenderingContext !== "undefined" && gl.constructor.name === "WebGL2RenderingContext";
 
-	let precision = parameters.precision !== undefined ? parameters.precision : 'highp';
+	let precision = parameters.precision !== undefined ? parameters.precision : "highp";
 	const maxPrecision = getMaxPrecision(precision);
 
 	if (maxPrecision !== precision) {
-		console.warn('THREE.WebGLRenderer:', precision, 'not supported, using', maxPrecision, 'instead.');
+		console.warn("THREE.WebGLRenderer:", precision, "not supported, using", maxPrecision, "instead.");
 		precision = maxPrecision;
 	}
 
-	const drawBuffers = isWebGL2 || extensions.has('WEBGL_draw_buffers');
+	const drawBuffers = isWebGL2 || extensions.has("WEBGL_draw_buffers");
 
 	const logarithmicDepthBuffer = parameters.logarithmicDepthBuffer === true;
 
@@ -65,7 +65,7 @@ function WebGLCapabilities(gl, extensions, parameters) {
 	const maxFragmentUniforms = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS);
 
 	const vertexTextures = maxVertexTextures > 0;
-	const floatFragmentTextures = isWebGL2 || extensions.has('OES_texture_float');
+	const floatFragmentTextures = isWebGL2 || extensions.has("OES_texture_float");
 	const floatVertexTextures = vertexTextures && floatFragmentTextures;
 
 	const maxSamples = isWebGL2 ? gl.getParameter(gl.MAX_SAMPLES) : 0;

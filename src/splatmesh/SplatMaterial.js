@@ -1,12 +1,12 @@
-import * as THREE from 'three';
-import { Constants } from '../Constants.js';
+import * as THREE from "three";
+import { Constants } from "../Constants.js";
 
 export class SplatMaterial {
 	static buildVertexShaderBase(
 		dynamicMode = false,
 		enableOptionalEffects = false,
 		maxSphericalHarmonicsDegree = 0,
-		customVars = '',
+		customVars = "",
 	) {
 		let vertexShaderSource = `
         precision highp float;
@@ -147,7 +147,7 @@ export class SplatMaterial {
                 mat4 transformModelViewMatrix = viewMatrix * transform;
             `;
 		} else {
-			vertexShaderSource += `mat4 transformModelViewMatrix = modelViewMatrix;`;
+			vertexShaderSource += "mat4 transformModelViewMatrix = modelViewMatrix;";
 		}
 
 		vertexShaderSource += `
@@ -373,123 +373,123 @@ export class SplatMaterial {
 	) {
 		const uniforms = {
 			sceneCenter: {
-				type: 'v3',
+				type: "v3",
 				value: new THREE.Vector3(),
 			},
 			fadeInComplete: {
-				type: 'i',
+				type: "i",
 				value: 0,
 			},
 			orthographicMode: {
-				type: 'i',
+				type: "i",
 				value: 0,
 			},
 			visibleRegionFadeStartRadius: {
-				type: 'f',
+				type: "f",
 				value: 0.0,
 			},
 			visibleRegionRadius: {
-				type: 'f',
+				type: "f",
 				value: 0.0,
 			},
 			currentTime: {
-				type: 'f',
+				type: "f",
 				value: 0.0,
 			},
 			firstRenderTime: {
-				type: 'f',
+				type: "f",
 				value: 0.0,
 			},
 			centersColorsTexture: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sphericalHarmonicsTexture: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sphericalHarmonicsTextureR: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sphericalHarmonicsTextureG: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sphericalHarmonicsTextureB: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sphericalHarmonics8BitCompressionRangeMin: {
-				type: 'f',
+				type: "f",
 				value: [],
 			},
 			sphericalHarmonics8BitCompressionRangeMax: {
-				type: 'f',
+				type: "f",
 				value: [],
 			},
 			focal: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(),
 			},
 			orthoZoom: {
-				type: 'f',
+				type: "f",
 				value: 1.0,
 			},
 			inverseFocalAdjustment: {
-				type: 'f',
+				type: "f",
 				value: 1.0,
 			},
 			viewport: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(),
 			},
 			basisViewport: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(),
 			},
 			debugColor: {
-				type: 'v3',
+				type: "v3",
 				value: new THREE.Color(),
 			},
 			centersColorsTextureSize: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(1024, 1024),
 			},
 			sphericalHarmonicsDegree: {
-				type: 'i',
+				type: "i",
 				value: maxSphericalHarmonicsDegree,
 			},
 			sphericalHarmonicsTextureSize: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(1024, 1024),
 			},
 			sphericalHarmonics8BitMode: {
-				type: 'i',
+				type: "i",
 				value: 0,
 			},
 			sphericalHarmonicsMultiTextureMode: {
-				type: 'i',
+				type: "i",
 				value: 0,
 			},
 			splatScale: {
-				type: 'f',
+				type: "f",
 				value: splatScale,
 			},
 			pointCloudModeEnabled: {
-				type: 'i',
+				type: "i",
 				value: pointCloudModeEnabled ? 1 : 0,
 			},
 			sceneIndexesTexture: {
-				type: 't',
+				type: "t",
 				value: null,
 			},
 			sceneIndexesTextureSize: {
-				type: 'v2',
+				type: "v2",
 				value: new THREE.Vector2(1024, 1024),
 			},
 			sceneCount: {
-				type: 'i',
+				type: "i",
 				value: 1,
 			},
 		};
@@ -507,8 +507,8 @@ export class SplatMaterial {
 			for (let i = 0; i < Constants.MaxScenes; i++) {
 				sceneOpacity.push(1.0);
 			}
-			uniforms['sceneOpacity'] = {
-				type: 'f',
+			uniforms["sceneOpacity"] = {
+				type: "f",
 				value: sceneOpacity,
 			};
 
@@ -516,8 +516,8 @@ export class SplatMaterial {
 			for (let i = 0; i < Constants.MaxScenes; i++) {
 				sceneVisibility.push(1);
 			}
-			uniforms['sceneVisibility'] = {
-				type: 'i',
+			uniforms["sceneVisibility"] = {
+				type: "i",
 				value: sceneVisibility,
 			};
 		}
@@ -527,8 +527,8 @@ export class SplatMaterial {
 			for (let i = 0; i < Constants.MaxScenes; i++) {
 				transformMatrices.push(new THREE.Matrix4());
 			}
-			uniforms['transforms'] = {
-				type: 'mat4',
+			uniforms["transforms"] = {
+				type: "mat4",
 				value: transformMatrices,
 			};
 		}

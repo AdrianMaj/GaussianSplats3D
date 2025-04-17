@@ -1,4 +1,4 @@
-import { PlyFormat } from './PlyFormat.js';
+import { PlyFormat } from "./PlyFormat.js";
 
 const [
 	FieldSizeIdDouble,
@@ -31,7 +31,7 @@ const FieldSize = {
 };
 
 export class PlyParserUtils {
-	static HeaderEndToken = 'end_header';
+	static HeaderEndToken = "end_header";
 
 	static decodeSectionHeader(headerLines, fieldNameIdMap, headerStartLine = 0) {
 		const extractedLines = [];
@@ -50,7 +50,7 @@ export class PlyParserUtils {
 
 		for (let i = headerStartLine; i < headerLines.length; i++) {
 			const line = headerLines[i].trim();
-			if (line.startsWith('element')) {
+			if (line.startsWith("element")) {
 				if (processingSection) {
 					headerEndLine--;
 					break;
@@ -58,7 +58,7 @@ export class PlyParserUtils {
 					processingSection = true;
 					headerStartLine = i;
 					headerEndLine = i;
-					const lineComponents = line.split(' ');
+					const lineComponents = line.split(" ");
 					let validComponents = 0;
 					for (let lineComponent of lineComponents) {
 						const trimmedComponent = lineComponent.trim();
@@ -72,7 +72,7 @@ export class PlyParserUtils {
 						}
 					}
 				}
-			} else if (line.startsWith('property')) {
+			} else if (line.startsWith("property")) {
 				const fieldMatch = line.match(/(\w+)\s+(\w+)\s+(\w+)/);
 				if (fieldMatch) {
 					const fieldTypeStr = fieldMatch[2];
@@ -139,7 +139,7 @@ export class PlyParserUtils {
 		let sphericalHarmonicsFieldCount = 0;
 		let coefficientsPerChannel = 0;
 		for (let fieldName of fieldNames) {
-			if (fieldName.startsWith('f_rest')) sphericalHarmonicsFieldCount++;
+			if (fieldName.startsWith("f_rest")) sphericalHarmonicsFieldCount++;
 		}
 		coefficientsPerChannel = sphericalHarmonicsFieldCount / 3;
 		let degree = 0;
@@ -152,12 +152,12 @@ export class PlyParserUtils {
 		for (let rgb = 0; rgb < 3; rgb++) {
 			if (degree >= 1) {
 				for (let i = 0; i < 3; i++) {
-					degree1Fields.push(fieldNameIdMap['f_rest_' + (i + coefficientsPerChannel * rgb)]);
+					degree1Fields.push(fieldNameIdMap["f_rest_" + (i + coefficientsPerChannel * rgb)]);
 				}
 			}
 			if (degree >= 2) {
 				for (let i = 0; i < 5; i++) {
-					degree2Fields.push(fieldNameIdMap['f_rest_' + (i + coefficientsPerChannel * rgb + 3)]);
+					degree2Fields.push(fieldNameIdMap["f_rest_" + (i + coefficientsPerChannel * rgb + 3)]);
 				}
 			}
 		}
@@ -173,8 +173,8 @@ export class PlyParserUtils {
 	static getHeaderSectionNames(headerLines) {
 		const sectionNames = [];
 		for (let headerLine of headerLines) {
-			if (headerLine.startsWith('element')) {
-				const lineComponents = headerLine.split(' ');
+			if (headerLine.startsWith("element")) {
+				const lineComponents = headerLine.split(" ");
 				let validComponents = 0;
 				for (let lineComponent of lineComponents) {
 					const trimmedComponent = lineComponent.trim();
@@ -206,12 +206,12 @@ export class PlyParserUtils {
 	static extractHeaderFromBufferToText(plyBuffer) {
 		const decoder = new TextDecoder();
 		let headerOffset = 0;
-		let headerText = '';
+		let headerText = "";
 		const readChunkSize = 100;
 
 		while (true) {
 			if (headerOffset + readChunkSize >= plyBuffer.byteLength) {
-				throw new Error('End of file reached while searching for end of header');
+				throw new Error("End of file reached while searching for end of header");
 			}
 			const headerChunk = new Uint8Array(plyBuffer, headerOffset, readChunkSize);
 			headerText += decoder.decode(headerChunk);
@@ -228,12 +228,12 @@ export class PlyParserUtils {
 	static readHeaderFromBuffer(plyBuffer) {
 		const decoder = new TextDecoder();
 		let headerOffset = 0;
-		let headerText = '';
+		let headerText = "";
 		const readChunkSize = 100;
 
 		while (true) {
 			if (headerOffset + readChunkSize >= plyBuffer.byteLength) {
-				throw new Error('End of file reached while searching for end of header');
+				throw new Error("End of file reached while searching for end of header");
 			}
 			const headerChunk = new Uint8Array(plyBuffer, headerOffset, readChunkSize);
 			headerText += decoder.decode(headerChunk);
@@ -248,7 +248,7 @@ export class PlyParserUtils {
 	}
 
 	static convertHeaderTextToLines(headerText) {
-		const headerLines = headerText.split('\n');
+		const headerLines = headerText.split("\n");
 		const prunedLines = [];
 		for (let i = 0; i < headerLines.length; i++) {
 			const line = headerLines[i].trim();
@@ -265,9 +265,9 @@ export class PlyParserUtils {
 		let format = PlyFormat.INRIAV1;
 		for (let i = 0; i < headerLines.length; i++) {
 			const line = headerLines[i].trim();
-			if (line.startsWith('element chunk') || line.match(/[A-Za-z]*packed_[A-Za-z]*/)) {
+			if (line.startsWith("element chunk") || line.match(/[A-Za-z]*packed_[A-Za-z]*/)) {
 				format = PlyFormat.PlayCanvasCompressed;
-			} else if (line.startsWith('element codebook_centers')) {
+			} else if (line.startsWith("element codebook_centers")) {
 				format = PlyFormat.INRIAV2;
 			} else if (line === PlyParserUtils.HeaderEndToken) {
 				break;

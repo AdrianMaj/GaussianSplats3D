@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { SplatMaterial } from './SplatMaterial.js';
+import * as THREE from "three";
+import { SplatMaterial } from "./SplatMaterial.js";
 
 export class SplatMaterial2D {
 	/**
@@ -45,12 +45,12 @@ export class SplatMaterial2D {
 			pointCloudModeEnabled,
 		);
 
-		uniforms['scaleRotationsTexture'] = {
-			type: 't',
+		uniforms["scaleRotationsTexture"] = {
+			type: "t",
 			value: null,
 		};
-		uniforms['scaleRotationsTextureSize'] = {
-			type: 'v2',
+		uniforms["scaleRotationsTextureSize"] = {
+			type: "v2",
 			value: new THREE.Vector2(1024, 1024),
 		};
 
@@ -247,7 +247,7 @@ export class SplatMaterial2D {
 		}
 
 		vertexShaderSource += SplatMaterial.getVertexShaderFadeIn();
-		vertexShaderSource += `}`;
+		vertexShaderSource += "}";
 
 		return vertexShaderSource;
 	}

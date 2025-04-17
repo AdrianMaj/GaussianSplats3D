@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { delayedExecute } from '../Util.js';
+import * as THREE from "three";
+import { delayedExecute } from "../Util.js";
 
 class SplatTreeNode {
 	static idGen = 0;
@@ -316,8 +316,8 @@ function workerProcessCenters(splatTreeWorker, centers, transferBuffers, maxDept
 function checkAndCreateWorker() {
 	const splatTreeWorker = new Worker(
 		URL.createObjectURL(
-			new Blob(['(', createSplatTreeWorker.toString(), ')(self)'], {
-				type: 'application/javascript',
+			new Blob(["(", createSplatTreeWorker.toString(), ")(self)"], {
+				type: "application/javascript",
 			}),
 		),
 	);

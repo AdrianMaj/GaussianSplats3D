@@ -8,7 +8,7 @@ export class GSVisionLogo {
 		this.idGen = 1;
 		this.container = container || document.body;
 
-		this.gsVisionLogoElement = document.createElement('div');
+		this.gsVisionLogoElement = document.createElement("div");
 		this.gsVisionLogoElement.innerHTML = `
             <svg width="505" height="220" style="height: auto;" viewBox="0 0 505 220" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -22,10 +22,10 @@ export class GSVisionLogo {
                 fill="white" />
             </svg>
         `;
-		this.gsVisionLogoElement.className = 'gsVisionLogo';
-		this.gsVisionLogoElement.style.display = hideAttribution ? 'none' : 'flex';
+		this.gsVisionLogoElement.className = "gsVisionLogo";
+		this.gsVisionLogoElement.style.display = hideAttribution ? "none" : "flex";
 
-		const style = document.createElement('style');
+		const style = document.createElement("style");
 		style.innerHTML = `
             .gsVisionLogo{
                 position: absolute;
@@ -48,7 +48,7 @@ export class GSVisionLogo {
 	 */
 	show() {
 		if (this.gsVisionLogoElement) {
-			this.gsVisionLogoElement.style.display = 'flex';
+			this.gsVisionLogoElement.style.display = "flex";
 		}
 	}
 
@@ -57,7 +57,7 @@ export class GSVisionLogo {
 	 */
 	hide() {
 		if (this.gsVisionLogoElement) {
-			this.gsVisionLogoElement.style.display = 'none';
+			this.gsVisionLogoElement.style.display = "none";
 		}
 	}
 }

@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-import { UncompressedSplatArray } from './UncompressedSplatArray.js';
-import { SplatBuffer } from './SplatBuffer.js';
+import * as THREE from "three";
+import { UncompressedSplatArray } from "./UncompressedSplatArray.js";
+import { SplatBuffer } from "./SplatBuffer.js";
 
 export class SplatPartitioner {
 	constructor(sectionCount, sectionFilters, groupingParameters, partitionGenerator) {

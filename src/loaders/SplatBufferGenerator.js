@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-import { SplatPartitioner } from './SplatPartitioner.js';
-import { SplatBuffer } from './SplatBuffer.js';
+import * as THREE from "three";
+import { SplatPartitioner } from "./SplatPartitioner.js";
+import { SplatBuffer } from "./SplatBuffer.js";
 
 export class SplatBufferGenerator {
 	constructor(
