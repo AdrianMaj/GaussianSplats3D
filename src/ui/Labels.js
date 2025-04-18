@@ -23,6 +23,11 @@ export class FloatingLabels {
 		this.labelsGroup = new THREE.Group();
 		this.scene.add(this.labelsGroup);
 
+		// --- Temporary vectors for update loop ---
+		this._tempVec3 = new THREE.Vector3();
+		this._cameraRight = new THREE.Vector3();
+		// ---
+
 		// Create UI for label editing/creation
 		this.createEditUI();
 
@@ -49,7 +54,9 @@ export class FloatingLabels {
 			this.labels.forEach((labelInstance, id) => {
 				allCurrentLabelsData.push({
 					id: id,
-					position: labelInstance.container.position.toArray(),
+					// Use the connectorTarget as the persistent position
+					position:
+						labelInstance.options.connectorTarget?.toArray() || labelInstance.container.position.toArray(),
 					text: labelInstance.text,
 					options: labelInstance.options,
 				});
@@ -70,51 +77,37 @@ export class FloatingLabels {
 		this.clickHandler = (event) => {
 			if (!this.editMode) return;
 
-			// Calculate mouse position in normalized device coordinates
 			const rect = this.viewer.renderer.domElement.getBoundingClientRect();
 			this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 			this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-			// Set up raycaster
 			this.raycaster.setFromCamera(this.mouse, this.camera);
 
-			// Create an array of all label objects to test
 			const labelObjects = [];
 			this.labels.forEach((label, id) => {
-				// Only test background for selection for simplicity
 				if (label.background) {
 					labelObjects.push({ id, object: label.background });
 				}
 			});
 
-			// Get all objects that intersect with the ray
 			const intersects = this.raycaster.intersectObjects(labelObjects.map((item) => item.object));
 
-			// If we intersected with a label, select it
 			if (intersects.length > 0) {
-				// Find the id of the label that was clicked
 				const clickedObject = intersects[0].object;
 				const labelInfo = labelObjects.find((item) => item.object === clickedObject);
 
 				if (labelInfo) {
-					// Select this label
 					this.selectLabel(labelInfo.id);
-
-					// Show edit UI
 					this.showEditUI(labelInfo.id);
-
-					// Prevent further propagation
 					event.stopPropagation();
 					return;
 				}
 			}
 
-			// If we clicked outside any label, deselect
 			this.deselectLabel();
-			this.hideEditUI(); // Hide UI if clicking outside
+			this.hideEditUI();
 		};
 
-		// Add the click handler to the renderer's canvas
 		this.viewer.renderer.domElement.addEventListener("click", this.clickHandler);
 	}
 
@@ -139,12 +132,10 @@ export class FloatingLabels {
 		// Create UI content
 		this.editUI.innerHTML = `
             <h3 style="margin-top: 0; margin-bottom: 15px;" id="label-modal-title">Edit Label</h3>
-
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px;">Text:</label>
                 <input type="text" id="label-text-input" style="width: 100%; padding: 8px; box-sizing: border-box; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
             </div>
-
             <div style="margin-bottom: 15px; display: flex; gap: 10px;">
                 <div style="flex: 1;">
                     <label style="display: block; margin-bottom: 5px;">Background Color:</label>
@@ -155,7 +146,6 @@ export class FloatingLabels {
                     <input type="color" id="label-text-color" style="width: 100%; height: 30px; background: #3a3a3a; border: 1px solid #555; border-radius: 4px;">
                 </div>
             </div>
-
             <div style="margin-bottom: 15px; display: flex; gap: 10px;">
                 <div style="flex: 1;">
                     <label style="display: block; margin-bottom: 5px;">Width:</label>
@@ -166,21 +156,19 @@ export class FloatingLabels {
                     <input type="number" id="label-height" min="0.3" step="0.1" style="width: 100%; padding: 8px; box-sizing: border-box; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
                 </div>
             </div>
-
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px;">Connector:</label>
                 <input type="checkbox" id="label-connector" checked style="margin-right: 5px;">
                 <label for="label-connector">Show connector</label>
             </div>
-
             <div id="connector-options" style="margin-bottom: 15px; padding-left: 20px;">
                 <div style="margin-bottom: 10px;">
                     <label style="display: block; margin-bottom: 5px;">Position:</label>
                     <select id="connector-position" style="width: 100%; padding: 8px; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
                         <option value="bottom">Below Target</option>
                         <option value="top">Above Target</option>
-                        <option value="left">Right of Target</option>
-                        <option value="right">Left of Target</option>
+                        <option value="left">Visually Right of Target</option> <!-- Changed Label -->
+                        <option value="right">Visually Left of Target</option> <!-- Changed Label -->
                     </select>
                 </div>
                 <div style="margin-bottom: 10px; display: flex; gap: 10px;">
@@ -198,7 +186,6 @@ export class FloatingLabels {
                     <input type="color" id="connector-color" style="width: 100%; height: 30px; background: #3a3a3a; border: 1px solid #555; border-radius: 4px;">
                 </div>
             </div>
-
             <div style="display: flex; justify-content: space-between;">
                 <button id="label-delete-btn" style="padding: 8px 15px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
                 <div>
@@ -208,59 +195,43 @@ export class FloatingLabels {
             </div>
         `;
 
-		// Add the UI to document body
 		document.body.appendChild(this.editUI);
 
-		// --- Event Listeners ---
 		document.getElementById("label-connector").addEventListener("change", (e) => {
 			document.getElementById("connector-options").style.display = e.target.checked ? "block" : "none";
 		});
-
-		document.getElementById("label-cancel-btn").addEventListener("click", () => {
-			this.hideEditUI();
-		});
-
-		document.getElementById("label-save-btn").addEventListener("click", () => {
-			this.saveEditUIData();
-		});
-
+		document.getElementById("label-cancel-btn").addEventListener("click", () => this.hideEditUI());
+		document.getElementById("label-save-btn").addEventListener("click", () => this.saveEditUIData());
 		document.getElementById("label-delete-btn").addEventListener("click", () => {
 			if (this.selectedLabelId) {
 				this.removeLabel(this.selectedLabelId);
 				this.hideEditUI();
 			}
 		});
-
-		// Prevent click inside UI from triggering the window click listener
-		this.editUI.addEventListener("click", (event) => {
-			event.stopPropagation();
-		});
+		this.editUI.addEventListener("click", (event) => event.stopPropagation());
 	}
 
 	showEditUI(labelId = null) {
-		this.selectedLabelId = labelId; // Store selected ID regardless of create/edit
+		this.selectedLabelId = labelId;
 		const isCreating = !labelId;
 		document.getElementById("label-modal-title").textContent = isCreating ? "Create Label" : "Edit Label";
 		document.getElementById("label-delete-btn").style.display = isCreating ? "none" : "block";
 
 		if (isCreating) {
-			// Default values for new label
 			document.getElementById("label-text-input").value = "New Label";
 			document.getElementById("label-bg-color").value = "#333333";
 			document.getElementById("label-text-color").value = "#ffffff";
 			document.getElementById("label-width").value = "1.5";
 			document.getElementById("label-height").value = "0.4";
 			document.getElementById("label-connector").checked = true;
-			document.getElementById("connector-position").value = "top"; // Default: Label Above Target
-			document.getElementById("connector-width").value = "2"; // Default width in pixels
-			document.getElementById("connector-length").value = "0.5"; // Default length
+			document.getElementById("connector-position").value = "top";
+			document.getElementById("connector-width").value = "2";
+			document.getElementById("connector-length").value = "0.5";
 			document.getElementById("connector-color").value = "#ffffff";
 		} else {
-			// Fill form with existing label data
 			const label = this.labels.get(labelId);
 			if (!label) return;
 			const options = label.options || {};
-
 			document.getElementById("label-text-input").value = label.text || "";
 			document.getElementById("label-bg-color").value = this.colorToHex(options.backgroundColor || "#333333");
 			document.getElementById("label-text-color").value = this.colorToHex(options.textColor || "#ffffff");
@@ -273,27 +244,20 @@ export class FloatingLabels {
 			document.getElementById("connector-color").value = this.colorToHex(options.connectorColor || "#ffffff");
 		}
 
-		// Show/hide connector options based on checkbox
 		document.getElementById("connector-options").style.display = document.getElementById("label-connector")
 			.checked
 			? "block"
 			: "none";
-
-		// Show the UI
 		this.editUI.style.display = "block";
 
-		if (this.callbacks.onModalOpen) {
-			this.callbacks.onModalOpen();
-		}
+		if (this.callbacks.onModalOpen) this.callbacks.onModalOpen();
 
-		// Focus on the text input
 		const textInput = document.getElementById("label-text-input");
 		textInput.focus();
 		textInput.select();
 	}
 
 	colorToHex(color) {
-		// ... (implementation is fine)
 		if (typeof color === "string" && color.startsWith("#")) {
 			return color;
 		}
@@ -316,12 +280,9 @@ export class FloatingLabels {
 	}
 
 	hideEditUI(calledAfterSave = false) {
-		// Added parameter
 		if (this.editUI.style.display !== "none") {
 			this.editUI.style.display = "none";
-			this.deselectLabel(calledAfterSave); // Pass flag
-
-			// *** Ensure modal close callback is called ***
+			this.deselectLabel(calledAfterSave);
 			if (this.callbacks.onModalClose) {
 				this.callbacks.onModalClose();
 			}
@@ -330,7 +291,6 @@ export class FloatingLabels {
 
 	saveEditUIData() {
 		const text = document.getElementById("label-text-input").value;
-		// Read all options directly from the form
 		const currentOptions = {
 			backgroundColor: document.getElementById("label-bg-color").value,
 			textColor: document.getElementById("label-text-color").value,
@@ -341,92 +301,85 @@ export class FloatingLabels {
 			connectorWidth: parseFloat(document.getElementById("connector-width").value) || 2,
 			connectorLength: parseFloat(document.getElementById("connector-length").value) || 0.5,
 			connectorColor: document.getElementById("connector-color").value,
-			// depthTest: true, // Assuming default from getDefaultLabelOptions
 		};
 
 		let changed = false;
 
 		if (this.selectedLabelId) {
-			// --- Update Existing Label ---
 			const label = this.labels.get(this.selectedLabelId);
 			if (label) {
 				const oldOptions = label.options || {};
-				// Determine if visual geometry/positioning needs full update
 				const appearanceChanged =
 					currentOptions.width !== oldOptions.width ||
 					currentOptions.height !== oldOptions.height ||
 					currentOptions.backgroundColor !== oldOptions.backgroundColor ||
-					currentOptions.opacity !== oldOptions.opacity || // Include opacity if added
+					currentOptions.opacity !== oldOptions.opacity ||
 					currentOptions.showConnector !== oldOptions.showConnector ||
 					currentOptions.connectorPosition !== oldOptions.connectorPosition ||
 					currentOptions.connectorWidth !== oldOptions.connectorWidth ||
 					currentOptions.connectorLength !== oldOptions.connectorLength ||
 					currentOptions.connectorColor !== oldOptions.connectorColor ||
-					currentOptions.textColor !== oldOptions.textColor || // Text style change needs full redraw
-					currentOptions.font !== oldOptions.font; // Font change needs full redraw
+					currentOptions.textColor !== oldOptions.textColor ||
+					currentOptions.font !== oldOptions.font;
 
 				const textChanged = text !== label.text;
 
-				// Preserve the target position
+				// Preserve the existing target position
 				currentOptions.connectorTarget =
 					label.options.connectorTarget?.clone() || label.container.position.clone();
 
-				// Call updateLabelText - it will handle merging and conditional recreation
-				// Pass flag indicating if appearance or text changed
 				this.updateLabelText(this.selectedLabelId, text, currentOptions, appearanceChanged || textChanged);
 
-				delete label.originalColor;
+				delete label.originalColor; // Clear selection highlight tracker
 				delete label.originalOpacity;
 				changed = true;
 			}
 		} else if (this.pendingCursorPosition) {
+			// Creating a new label
 			const id = `label-${Date.now()}`;
 			const targetPosition = this.pendingCursorPosition.clone();
-			this.addLabel(id, targetPosition, text, currentOptions); // This will notify via its internal call
-			changed = true; // addLabel internally calls _notifyUpdate
+			// Store target in options right away for new labels
+			currentOptions.connectorTarget = targetPosition.clone();
+			this.addLabel(id, targetPosition, text, currentOptions); // addLabel internally notifies
+			changed = false; // Notification already happened in addLabel
 			this.pendingCursorPosition = null;
 		}
 
 		if (this.selectedLabelId && changed) {
+			// Only notify if an existing label was changed and saved
 			this._notifyUpdate();
 		}
 
-		this.hideEditUI(true);
+		this.hideEditUI(true); // Pass true to keep saved color if needed
 	}
 
 	toggleEditMode() {
-		this.editMode = !this.editMode; // Toggle state FIRST
+		this.editMode = !this.editMode;
 		console.log(`[toggleEditMode] Set editMode to: ${this.editMode}`);
 
 		this.labels.forEach((label, id) => {
-			// Added ID for logging
 			if (label.background && label.background.material) {
-				// Check material too
-
 				if (this.editMode) {
-					// --- Turning Edit Mode ON ---
-					// Store current options color ONLY if originalColor isn't already set
-					// (prevents overwriting if toggling quickly)
 					if (label.originalColor === undefined) {
-						label.originalColor = this.colorToHex(label.options.backgroundColor); // Store from options
+						// Store current OPTIONS color/opacity
+						label.originalColor = this.colorToHex(label.options.backgroundColor);
 						label.originalOpacity = label.options.opacity;
 						console.log(`[toggleEditMode ON] Stored original color: ${label.originalColor} for ${id}`);
 					}
-					// Set edit mode style
-					label.background.material.color.setHex(0x9966ff); // Set to purple
+					// Set edit mode style (purple)
+					label.background.material.color.setHex(0x9966ff);
 					label.background.material.opacity = 0.9;
 					console.log(`[toggleEditMode ON] Set edit mode purple for ${id}`);
 				} else {
 					// --- Turning Edit Mode OFF ---
-					// Restore directly from the label's current SAVED options
+					// Restore directly from the label's SAVED options
 					const optionsColor = this.colorToHex(label.options.backgroundColor);
 					const optionsOpacity = label.options.opacity;
-					label.background.material.color.set(optionsColor); // Use set() which handles hex strings
+					label.background.material.color.set(optionsColor);
 					label.background.material.opacity = optionsOpacity;
 					console.log(`[toggleEditMode OFF] Restored color from options: ${optionsColor} for ${id}`);
 
-					// **Important:** Clear the stored original state now that edit mode is off
-					// This ensures next time edit mode is turned ON, it stores the *current* options color.
+					// Clear the stored original state now that edit mode is off
 					delete label.originalColor;
 					delete label.originalOpacity;
 				}
@@ -435,33 +388,31 @@ export class FloatingLabels {
 			}
 		});
 
-		// If exiting edit mode, deselect any selected label
-		// deselectLabel(false) will now correctly restore from options because editMode is false
 		if (!this.editMode) {
-			this.deselectLabel(false);
-			this.hideEditUI(false); // Also hide UI
+			this.deselectLabel(false); // Deselect will restore from options
+			this.hideEditUI(false);
 		}
 		return this.editMode;
 	}
 
 	selectLabel(id) {
-		if (!this.editMode) return; // Can only select in edit mode
+		if (!this.editMode) return;
 
-		// Deselect previous label first
-		this.deselectLabel();
+		this.deselectLabel(); // Deselect previous
 
-		// Select new label
 		this.selectedLabelId = id;
 		const label = this.labels.get(id);
 
 		if (label && label.background) {
-			// Store original color if switching selection in edit mode
+			// Store the color IT CURRENTLY HAS (which should be edit purple)
+			// if switching selection within edit mode.
 			if (label.originalColor === undefined) {
-				label.originalColor = label.background.material.color.getHex();
+				label.originalColor = label.background.material.color.getHexString(); // Get current hex
+				label.originalColor = "#" + label.originalColor; // Add hash if missing
 				label.originalOpacity = label.background.material.opacity;
 			}
-			// Highlight selected label (different from general edit mode color)
-			label.background.material.color.setHex(0xffaa55); // Selection highlight color
+			// Highlight selected label (orange)
+			label.background.material.color.setHex(0xffaa55);
 			label.background.material.opacity = 0.95;
 		}
 	}
@@ -474,23 +425,28 @@ export class FloatingLabels {
 					`[deselectLabel] EditMode: ${this.editMode}, KeepSaved: ${keepSavedColor}, LabelID: ${this.selectedLabelId}`,
 				);
 
-				// If we are NOT in edit mode anymore, restore from options
 				if (!this.editMode) {
+					// Exiting edit mode entirely: Restore from SAVED OPTIONS
 					const optionsColor = this.colorToHex(label.options.backgroundColor);
 					label.background.material.color.set(optionsColor);
 					label.background.material.opacity = label.options.opacity;
-					console.log(`[deselectLabel] Restored color from options: ${optionsColor}`);
-					// Ensure originalColor tracker is clear when not in edit mode
-					delete label.originalColor;
+					console.log(`[deselectLabel] Exiting edit mode. Restored color from options: ${optionsColor}`);
+					delete label.originalColor; // Clear tracker
 					delete label.originalOpacity;
-				} else if (this.editMode) {
-					if (!keepSavedColor) {
-						label.background.material.color.setHex(0x9966ff); // Standard edit mode color
+				} else {
+					// Still in edit mode, just deselecting this one
+					if (!keepSavedColor && label.originalColor !== undefined) {
+						// Restore to standard edit mode color (purple), NOT the saved options color
+						label.background.material.color.setHex(0x9966ff);
 						label.background.material.opacity = 0.9;
-						console.log("[deselectLabel] Set color to standard edit mode purple.");
+						console.log("[deselectLabel] Still edit mode. Set color to standard edit purple.");
 					} else {
-						console.log("[deselectLabel] Keeping saved color (keepSavedColor=true).");
+						// Keep the current color (likely orange selection or just saved options color)
+						console.log(
+							`[deselectLabel] Still edit mode. Keeping current color (keepSavedColor=${keepSavedColor}).`,
+						);
 					}
+					// Don't delete originalColor here, as we might re-select it
 				}
 			}
 			this.selectedLabelId = null;
@@ -501,23 +457,20 @@ export class FloatingLabels {
 		if (!this.editMode || !this.viewer.showMeshCursor) return false;
 
 		this.pendingCursorPosition = this.viewer.sceneHelper.meshCursor.position.clone();
-		// Optional: Adjust height if needed
 		if (this.pendingCursorPosition.y < 0.1) {
 			this.pendingCursorPosition.y = 0.1;
 		}
 
-		this.deselectLabel(); // Deselect any current label before creating new
+		this.deselectLabel();
 		this.showEditUI(null); // Show UI for creation
 
 		return true;
 	}
 
 	addLabels(labelsData, notify = true) {
-		// Added notify flag
 		if (!labelsData || !Array.isArray(labelsData)) return;
 		let changed = false;
 		labelsData.forEach((labelData) => {
-			// Use internal addLabel which won't notify individually
 			const added = this._addLabelInternal(
 				labelData.id,
 				labelData.position,
@@ -526,7 +479,6 @@ export class FloatingLabels {
 			);
 			if (added) changed = true;
 		});
-		// Notify once after all are added if requested
 		if (changed && notify) {
 			this._notifyUpdate();
 		}
@@ -535,8 +487,7 @@ export class FloatingLabels {
 	addLabel(id, position, text, options = {}) {
 		const label = this._addLabelInternal(id, position, text, options);
 		if (label) {
-			// Only notify if something was actually added/replaced
-			this._notifyUpdate();
+			this._notifyUpdate(); // Notify after successful addition/replacement
 		}
 		return label;
 	}
@@ -547,80 +498,67 @@ export class FloatingLabels {
 		}
 		const targetPosition = Array.isArray(position) ? new THREE.Vector3(...position) : position.clone();
 		const finalOptions = { ...this.getDefaultLabelOptions(), ...options };
+
+		// IMPORTANT: Ensure connectorTarget is set from the input position
+		finalOptions.connectorTarget = targetPosition.clone();
+
 		const label = this.createLabelObject(targetPosition, text, finalOptions);
 		this.labels.set(id, label);
 		this.labelsGroup.add(label.container);
-		return label; // Return the created label object
+		return label;
 	}
 
 	createLabelObject(targetPosition, text, options = {}) {
 		// Options should already be merged with defaults here
 		const container = new THREE.Group();
-		container.position.copy(targetPosition);
-		// Make label face the camera initially - will be updated in loop
-		container.quaternion.copy(this.camera.quaternion);
+		container.position.copy(targetPosition); // Container is at the target/anchor point
+		container.quaternion.copy(this.camera.quaternion); // Initial face camera
 
-		// Use merged options directly
 		const width = options.width;
 		const height = options.height;
 
-		const visualOffset = this.calculateVisualOffset(options); // Use helper
-		options.calculatedVisualOffset = visualOffset.clone(); // Store for later use
-		options.connectorTarget = targetPosition.clone(); // Store anchor point
+		// Calculate initial offset based on user's intended position
+		const initialVisualOffset = this.calculateVisualOffset(options);
+		options.calculatedVisualOffset = initialVisualOffset.clone(); // Store initial calculation for reference
+		// connectorTarget is already set in options during add/update
 
 		console.log(
 			`[createLabelObject ${targetPosition
 				.toArray()
-				.map((p) => p.toFixed(2))}] TargetPos, VisualOffset: ${visualOffset
+				.map((p) => p.toFixed(2))}] TargetPos, Initial VisualOffset: ${initialVisualOffset
 				.toArray()
 				.map((p) => p.toFixed(2))}`,
 		);
 
 		// --- Create Visual Elements ---
 		const background = this.createBackgroundMesh(width, height, options);
-		background.position.copy(visualOffset);
-		// background.position.z = -0.002; // REMOVED Z-offset
-		console.log(
-			`[createLabelObject] Background created. Pos: ${background.position
-				.toArray()
-				.map((p) => p.toFixed(2))}, Visible: ${background.visible}, Scale: ${background.scale
-				.toArray()
-				.map((p) => p.toFixed(2))}, Material Opacity: ${background.material.opacity}, RenderOrder: ${
-				background.renderOrder
-			}`,
-		);
+		background.position.copy(initialVisualOffset); // Position relative to container
 		container.add(background);
 
-		const textSprite = this.createTextSprite(text, options); // Pass merged options
-		textSprite.position.copy(visualOffset);
-		// textSprite.position.z = 0.001; // REMOVED Z-offset
-		console.log(
-			`[createLabelObject] TextSprite created. Pos: ${textSprite.position
-				.toArray()
-				.map((p) => p.toFixed(2))}, Visible: ${textSprite.visible}, Scale: ${textSprite.scale
-				.toArray()
-				.map((p) => p.toFixed(2))}, Material Opacity: ${textSprite.material.opacity}, RenderOrder: ${
-				textSprite.renderOrder
-			}`,
-		);
+		const textSprite = this.createTextSprite(text, options);
+		textSprite.position.copy(initialVisualOffset); // Position relative to container
 		container.add(textSprite);
 
 		let connector = null;
 		if (options.showConnector) {
-			connector = this.createConnector(visualOffset, options);
-			console.log(
-				`[createLabelObject] Connector created. Visible: ${connector?.visible}, RenderOrder: ${connector.renderOrder}`,
-			);
+			// Create connector using the initial offset
+			connector = this.createConnector(initialVisualOffset, options);
 			container.add(connector);
-			console.log(`[createLabelObject] Connector added. Container children: ${container.children.length}`);
 		}
 
-		// Set initial visibility for the container itself
-		container.visible = options.visible; // Use merged option
-		// Force child visibility (debugging)
-		if (background) background.visible = true;
-		if (textSprite) textSprite.visible = true;
-		if (connector) connector.visible = true;
+		container.visible = options.visible;
+
+		// --- Store state for dynamic positioning ---
+		const labelInstance = {
+			container,
+			background,
+			textSprite,
+			connector,
+			text,
+			options, // Contains connectorTarget, calculatedVisualOffset etc.
+			currentAppliedOffset: initialVisualOffset.clone(), // Track the offset currently applied visually
+		};
+		// ---
 
 		console.log(
 			`[createLabelObject] Final container settings. Visible: ${
@@ -628,43 +566,37 @@ export class FloatingLabels {
 			}, Position: ${container.position.toArray().map((p) => p.toFixed(2))}`,
 		);
 
-		return { container, background, textSprite, connector, text, options };
+		return labelInstance; // Return the enhanced label instance
 	}
 
-	// Helper to create background mesh
 	createBackgroundMesh(width, height, options) {
 		const geometry = new THREE.PlaneGeometry(width, height);
 		const material = new THREE.MeshBasicMaterial({
-			color: new THREE.Color(options.backgroundColor), // Use directly from options
-			transparent: true, // Background likely needs transparency
-			opacity: options.opacity, // Use directly from options
+			color: new THREE.Color(options.backgroundColor),
+			transparent: true,
+			opacity: options.opacity,
 			side: THREE.DoubleSide,
-			depthTest: options.depthTest, // Use directly from options
-			// polygonOffset: true, // REMOVED
-			// polygonOffsetFactor: 1.0,
-			// polygonOffsetUnits: 4.0,
+			depthTest: true,
+			depthWrite: true,
 		});
 		const mesh = new THREE.Mesh(geometry, material);
-		mesh.renderOrder = options.renderOrderBackground; // Use directly from options
+		mesh.renderOrder = options.renderOrderBackground; // Will be set via default options
 		return mesh;
 	}
 
-	// Helper to create text sprite
 	createTextSprite(text, options = {}) {
-		console.log(`[createTextSprite] Called with text: "${text}"`, options);
-
+		// console.log(`[createTextSprite] Called with text: "${text}"`, options);
 		const canvas = document.createElement("canvas");
 		const context = canvas.getContext("2d");
-		const font = options.font; // Use directly from options
-		const textColor = options.textColor; // Use directly from options
-		const width = options.width; // Desired world width
-		const height = options.height; // Desired world height
-		const padding = options.padding; // Use directly from options
+		const font = options.font;
+		const textColor = options.textColor;
+		const width = options.width; // Desired world width of the *background*
+		const height = options.height; // Desired world height of the *background*
+		const padding = options.padding;
 		const scale = 4; // Resolution scale factor
 
-		// --- 1. Calculate required canvas size ---
-		context.font = font; // Set font early to measure text accurately
-		const lines = text ? text.split("\\n") : [""]; // Handle null/empty text
+		context.font = font;
+		const lines = text ? text.split("\\n") : [""];
 		let maxTextWidth = 0;
 		lines.forEach((line) => (maxTextWidth = Math.max(maxTextWidth, context.measureText(line).width)));
 		const fontSize = parseInt(font, 10) || 24;
@@ -675,34 +607,21 @@ export class FloatingLabels {
 		const canvasWidth = canvasWidthPixels * scale;
 		const canvasHeight = canvasHeightPixels * scale;
 
-		console.log(
-			`[createTextSprite] Text: "${text}", MaxTextWidth: ${maxTextWidth.toFixed(
-				1,
-			)}, TotalTextHeight: ${totalTextHeight.toFixed(
-				1,
-			)}, Calculated Canvas Px: ${canvasWidthPixels}x${canvasHeightPixels}, Scaled Canvas: ${canvasWidth}x${canvasHeight}, Font: ${font}`,
-		);
-
-		// --- 2. Check for invalid canvas size ---
 		if (canvasWidth <= 0 || canvasHeight <= 0) {
-			console.error(
-				"[createTextSprite] Calculated canvas dimensions are invalid!",
-				canvasWidth,
-				canvasHeight,
-			);
+			console.error("[createTextSprite] Invalid canvas dimensions!", canvasWidth, canvasHeight);
+			// Return a placeholder sprite if canvas creation fails
 			const errorMat = new THREE.SpriteMaterial({
 				color: 0xff00ff,
 				sizeAttenuation: options.sizeAttenuation,
 			});
 			const errorSprite = new THREE.Sprite(errorMat);
-			errorSprite.scale.set(width, height, 1);
+			errorSprite.scale.set(width, height, 1); // Use background dimensions
 			return errorSprite;
 		}
 
 		canvas.width = canvasWidth;
 		canvas.height = canvasHeight;
 
-		// --- 3. Draw text onto canvas ---
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		context.scale(scale, scale);
 		context.font = font;
@@ -712,94 +631,60 @@ export class FloatingLabels {
 		const startX = canvasWidthPixels / 2;
 		const startY = canvasHeightPixels / 2 - (totalTextHeight - estimatedLineHeight) / 2;
 		lines.forEach((line, i) => {
-			const lineY = startY + i * estimatedLineHeight;
-			console.log(
-				`[createTextSprite] Drawing line ${i}: "${line}" at ${startX.toFixed(1)}, ${lineY.toFixed(
-					1,
-				)} (logical px)`,
-			);
-			context.fillText(line, startX, lineY);
+			context.fillText(line, startX, startY + i * estimatedLineHeight);
 		});
 
-		// **** OPTIONAL DEBUG: Append canvas to body for visual check ****
-
-		// const existingDebugCanvas = document.getElementById('debugLabelCanvas');
-		// if (existingDebugCanvas) document.body.removeChild(existingDebugCanvas);
-		// canvas.id = 'debugLabelCanvas';
-		// canvas.style.border = "1px solid red";
-		// canvas.style.position = "fixed"; canvas.style.top = "10px"; canvas.style.left = "10px";
-		// canvas.style.width = `${canvasWidthPixels}px`; canvas.style.height = `${canvasHeightPixels}px`;
-		// canvas.style.backgroundColor = "rgba(0,0,0,0.3)"; canvas.style.zIndex = "9999";
-		// document.body.appendChild(canvas);
-		// console.log('[createTextSprite] DEBUG CANVAS APPENDED TO BODY');
-
-		// **** END OPTIONAL DEBUG ****
-
-		// --- 4. Create texture ---
 		const texture = new THREE.CanvasTexture(canvas);
 		texture.minFilter = THREE.LinearFilter;
 		texture.magFilter = THREE.LinearFilter;
 		texture.needsUpdate = true;
-		console.log("[createTextSprite] CanvasTexture created:", texture);
 		if (!texture.image) console.error("[createTextSprite] Texture image (canvas) is missing!");
 
-		// --- 5. Create sprite material ---
 		const spriteMaterial = new THREE.SpriteMaterial({
 			map: texture,
-			transparent: true, // KEEP: Text needs transparency
-			// alphaTest: 0.1, // REMOVED
-			// depthWrite: false, // REMOVED
-			depthTest: options.depthTest, // Use directly from options
-			sizeAttenuation: options.sizeAttenuation, // Use directly from options
+			transparent: true,
+			depthTest: options.depthTest,
+			sizeAttenuation: options.sizeAttenuation,
 		});
 		spriteMaterial.needsUpdate = true;
-		console.log("[createTextSprite] SpriteMaterial created:", spriteMaterial);
 		if (!spriteMaterial.map) console.error("[createTextSprite] Material map is null after creation!");
 
-		// --- 6. Create sprite ---
 		const sprite = new THREE.Sprite(spriteMaterial);
-		const textureAspect = canvas.width / canvas.height;
+		// Scale the sprite to fit *within* the background dimensions while maintaining aspect ratio
+		const textureAspect = canvasWidth / canvasHeight;
+		const backgroundAspect = width / height;
 
-		// Use the desired world height (from options) as the primary scale factor
-		const spriteHeight = height; // height comes from options.height
+		let spriteWidth, spriteHeight;
+		if (textureAspect > backgroundAspect) {
+			// Texture is wider than background shape
+			spriteWidth = width - (padding / scale) * 0.1; // Use background width (adjust for padding visually)
+			spriteHeight = spriteWidth / textureAspect;
+		} else {
+			// Texture is taller or same aspect as background shape
+			spriteHeight = height - (padding / scale) * 0.1; // Use background height (adjust for padding visually)
+			spriteWidth = spriteHeight * textureAspect;
+		}
 
-		// Calculate the corresponding world width for the sprite to maintain the texture's aspect ratio
-		const spriteWidth = spriteHeight * textureAspect;
-
-		// Set the sprite scale using the calculated dimensions
 		sprite.scale.set(spriteWidth, spriteHeight, 1);
-		sprite.renderOrder = options.renderOrderText; // Use directly from options
-		console.log("[createTextSprite] Sprite created:", sprite);
+		sprite.renderOrder = options.renderOrderText;
+		// console.log("[createTextSprite] Sprite created:", sprite);
 		if (sprite.scale.x <= 0 || sprite.scale.y <= 0)
 			console.warn("[createTextSprite] Sprite scale is zero or negative!", sprite.scale);
 
 		return sprite;
 	}
 
-	// Helper to create connector line
+	// Helper to create connector line - uses the provided visualOffset
 	createConnector(visualOffset, options = {}) {
-		const lineWidth = options.connectorWidth; // Use directly from options
-		const color = new THREE.Color(options.connectorColor); // Use directly from options
-		const width = options.width; // Use directly from options
-		const height = options.height; // Use directly from options
-		const connectorPosition = options.connectorPosition; // Use directly from options
+		const lineWidth = options.connectorWidth;
+		const color = new THREE.Color(options.connectorColor);
+		// const width = options.width;
+		// const height = options.height;
+		// // Intended position helps determine which edge to connect FROM
+		// const connectorPosition = options.connectorPosition;
 
-		const startPoint = visualOffset.clone();
-		switch (connectorPosition) {
-			case "top":
-				startPoint.y -= height / 2;
-				break; // Start from bottom edge of label
-			case "left":
-				startPoint.x -= width / 2;
-				break; // Start from left edge
-			case "right":
-				startPoint.x += width / 2;
-				break; // Start from right edge
-			case "bottom":
-			default:
-				startPoint.y += height / 2;
-				break; // Start from top edge
-		}
+		// Calculate start point based on the CURRENT visualOffset and intended position
+		const startPoint = this.calculateConnectorStartPoint(visualOffset, options);
 		const endPoint = new THREE.Vector3(0, 0, 0); // Target point (container origin)
 
 		const geometry = new LineGeometry();
@@ -811,22 +696,48 @@ export class FloatingLabels {
 
 		const material = new LineMaterial({
 			color: color,
-			linewidth: lineWidth,
+			linewidth: lineWidth * 0.005,
+			worldUnits: true,
 			resolution: resolution,
-			transparent: true, // Connector might need transparency
-			opacity: options.opacity, // Use main opacity
+			transparent: true,
+			opacity: options.opacity,
 			dashed: false,
-			depthTest: options.depthTest, // Use directly from options
-			// polygonOffset: true, // REMOVED
-			// polygonOffsetFactor: 1.0,
-			// polygonOffsetUnits: 2.0,
+			depthTest: options.depthTest,
 		});
 		const connector = new Line2(geometry, material);
 		connector.computeLineDistances();
-		connector.renderOrder = options.renderOrderConnector; // Use directly from options
+		connector.renderOrder = options.renderOrderConnector;
 
 		return connector;
 	}
+
+	// --- NEW HELPER: Calculate connector start based on offset and intended position ---
+	calculateConnectorStartPoint(visualOffset, options) {
+		const startPoint = visualOffset.clone();
+		const width = options.width;
+		const height = options.height;
+		// Use the INTENDED position to determine which edge of the label box to connect FROM.
+		// This ensures the connector starts correctly even if the visualOffset is flipped.
+		switch (options.connectorPosition) {
+			case "top": // Label is intended to be above target -> Connect TO label's bottom edge
+				startPoint.y -= height / 2;
+				break;
+			case "bottom": // Label is intended to be below target -> Connect TO label's top edge
+				startPoint.y += height / 2;
+				break;
+			case "left": // Label is intended to be visually right of target -> Connect TO label's left edge
+				startPoint.x -= width / 2;
+				break;
+			case "right": // Label is intended to be visually left of target -> Connect TO label's right edge
+				startPoint.x += width / 2;
+				break;
+			default: // Fallback
+				startPoint.y -= height / 2; // Default to bottom edge
+				break;
+		}
+		return startPoint;
+	}
+	// ---
 
 	// --- Update and Removal ---
 
@@ -834,17 +745,16 @@ export class FloatingLabels {
 		const label = this.labels.get(id);
 		if (!label) return;
 
-		const oldOptions = { ...label.options }; // Copy old options for comparison
-		label.text = newText; // Update text property
+		const oldOptions = { ...label.options };
+		label.text = newText;
 		// Merge options: Start with defaults, layer old, layer new
 		const mergedOptions = {
 			...this.getDefaultLabelOptions(),
-			...oldOptions,
-			...newOptions,
+			...oldOptions, // Include potentially existing connectorTarget etc.
+			...newOptions, // Overwrite with changes from UI
 		};
-		label.options = mergedOptions; // Store the final merged options back onto the label object
+		label.options = mergedOptions; // Store final merged options
 
-		// Determine if we need a full redraw vs just updating text texture
 		const appearanceChanged =
 			forceFullRedraw ||
 			mergedOptions.width !== oldOptions.width ||
@@ -862,53 +772,54 @@ export class FloatingLabels {
 
 		if (appearanceChanged) {
 			console.log(`[updateLabelText - ${id}] Appearance changed, full redraw.`);
-			// Full redraw: Remove all, recalculate offset, recreate all
-			this.cleanupLabelElements(label); // Helper for cleanup
-			const newVisualOffset = this.calculateVisualOffset(mergedOptions);
-			// Store new offset in the merged options AND back onto the label object itself
-			mergedOptions.calculatedVisualOffset = newVisualOffset.clone();
-			label.options.calculatedVisualOffset = newVisualOffset.clone();
+			this.cleanupLabelElements(label);
 
+			// Recalculate the initial visual offset based on potentially changed options
+			const newInitialVisualOffset = this.calculateVisualOffset(mergedOptions);
+			mergedOptions.calculatedVisualOffset = newInitialVisualOffset.clone(); // Update stored initial calculation
+			label.options.calculatedVisualOffset = newInitialVisualOffset.clone(); // Also update on label object
+
+			// --- IMPORTANT: Reset currentAppliedOffset to the new initial calculation ---
+			label.currentAppliedOffset = newInitialVisualOffset.clone();
+			// ---
+
+			// Create elements using the NEW initial offset
 			label.background = this.createBackgroundMesh(mergedOptions.width, mergedOptions.height, mergedOptions);
-			label.background.position.copy(newVisualOffset);
-			// label.background.position.z = -0.002; // REMOVED Z-offset
+			label.background.position.copy(newInitialVisualOffset);
 			label.container.add(label.background);
 
 			label.textSprite = this.createTextSprite(newText, mergedOptions);
-			label.textSprite.position.copy(newVisualOffset);
-			// label.textSprite.position.z = 0.001; // REMOVED Z-offset
+			label.textSprite.position.copy(newInitialVisualOffset);
 			label.container.add(label.textSprite);
 
 			if (mergedOptions.showConnector) {
-				label.connector = this.createConnector(newVisualOffset, mergedOptions);
+				label.connector = this.createConnector(newInitialVisualOffset, mergedOptions); // Create with new initial offset
 				label.container.add(label.connector);
 			}
-			// Ensure visibility after recreation
+
+			// Ensure visibility
 			if (label.background) label.background.visible = true;
 			if (label.textSprite) label.textSprite.visible = true;
 			if (label.connector) label.connector.visible = true;
 		} else {
-			console.log(`[updateLabelText - ${id}] Only text changed, updating sprite.`);
-			// Only text changed: Just update the text sprite
+			// Only text or non-appearance options changed
+			console.log(`[updateLabelText - ${id}] Only text/minor options changed.`);
+			// Update text sprite using the CURRENTLY APPLIED offset
 			if (label.textSprite) {
-				// Ensure previous sprite exists before removing
 				label.container.remove(label.textSprite);
 				label.textSprite.material.map?.dispose();
 				label.textSprite.material.dispose();
-				label.textSprite = null; // Nullify reference
+				label.textSprite = null;
 			}
-			// Use existing calculated offset
-			const currentOffset = label.options.calculatedVisualOffset || this.calculateVisualOffset(mergedOptions); // Fallback offset calculation
 			label.textSprite = this.createTextSprite(newText, mergedOptions);
-			label.textSprite.position.copy(currentOffset); // Position using existing/calculated offset
-			// label.textSprite.position.z = 0.001; // REMOVED Z-offset
-			label.textSprite.visible = true; // Ensure visibility
-			label.container.add(label.textSprite); // Add the new sprite
+			// Position using the offset that's currently visually correct
+			label.textSprite.position.copy(label.currentAppliedOffset);
+			label.textSprite.visible = true;
+			label.container.add(label.textSprite);
 		}
 		console.log(`[updateLabelText - ${id}] Update finished. Sprite:`, label.textSprite);
 	}
 
-	// Helper to get default options
 	getDefaultLabelOptions() {
 		return {
 			width: 1.5,
@@ -917,53 +828,58 @@ export class FloatingLabels {
 			textColor: "#ffffff",
 			opacity: 0.8,
 			showConnector: true,
-			connectorPosition: "top",
-			connectorWidth: 2,
-			connectorLength: 0.5,
+			connectorPosition: "top", // 'top', 'bottom', 'left', 'right'
+			connectorWidth: 2, // Line width in pixels
+			connectorLength: 0.5, // World units length
 			connectorColor: "#ffffff",
 			font: "Bold 24px Arial",
-			padding: 10,
-			depthTest: true,
-			sizeAttenuation: true,
+			padding: 10, // Pixels for text canvas
+			depthTest: true, // Ensure depth testing is enabled
+			sizeAttenuation: true, // For text sprite
 			visible: true,
-			renderOrderBackground: 0,
-			renderOrderText: 1,
-			renderOrderConnector: -1,
-			calculatedVisualOffset: new THREE.Vector3(), // Initialize
-			connectorTarget: new THREE.Vector3(), // Initialize
+			renderOrderBackground: 1, // Background in front
+			renderOrderText: 2, // Text on top
+			renderOrderConnector: 0, //
+			calculatedVisualOffset: new THREE.Vector3(),
+			connectorTarget: new THREE.Vector3(),
+			// fadeWithDistance: false,
+			// fadeStartDistance: 10,
+			// fadeEndDistance: 30,
+			// offset: null,
 		};
 	}
 
-	// Helper to calculate offset
+	// Helper to calculate the VISUAL offset based on options
+	// This determines where the label box sits relative to the target anchor point
 	calculateVisualOffset(options) {
-		// Use options directly, assuming defaults are merged in
 		const width = options.width;
 		const height = options.height;
 		const connectorLength = options.showConnector ? options.connectorLength : 0;
+		// Use the INTENDED position from options for calculation
 		const connectorPosition = options.connectorPosition;
 		const visualOffset = new THREE.Vector3();
 
 		if (options.showConnector) {
 			switch (connectorPosition) {
-				case "top":
+				case "top": // Label appears ABOVE target
 					visualOffset.y = height / 2 + connectorLength;
-					break; // Above
-				case "left":
+					break;
+				case "left": // Label appears VISUALLY RIGHT of target
 					visualOffset.x = width / 2 + connectorLength;
-					break; // Right
-				case "right":
+					break;
+				case "right": // Label appears VISUALLY LEFT of target
 					visualOffset.x = -(width / 2 + connectorLength);
-					break; // Left
-				case "bottom":
+					break;
+				case "bottom": // Label appears BELOW target
 				default:
 					visualOffset.y = -(height / 2 + connectorLength);
-					break; // Below
+					break;
 			}
 		} else {
-			visualOffset.y = height / 2 + 0.1; // Default slightly above
+			// Default placement slightly above if no connector
+			visualOffset.y = height / 2 + 0.1;
 		}
 		if (options.offset) {
-			// Apply additional explicit offset AFTER calculating connector offset
 			const explicitOffset = Array.isArray(options.offset)
 				? new THREE.Vector3(...options.offset)
 				: options.offset;
@@ -972,10 +888,9 @@ export class FloatingLabels {
 		return visualOffset;
 	}
 
-	// Helper to clean up label's visual elements
 	cleanupLabelElements(label) {
 		if (label.textSprite) {
-			if (label.textSprite.parent) label.textSprite.parent.remove(label.textSprite); // Ensure removal from parent
+			if (label.textSprite.parent) label.textSprite.parent.remove(label.textSprite);
 			label.textSprite.material.map?.dispose();
 			label.textSprite.material.dispose();
 			label.textSprite = null;
@@ -995,7 +910,6 @@ export class FloatingLabels {
 	}
 
 	removeLabel(id, notify = true) {
-		// Added notify flag
 		const label = this.labels.get(id);
 		if (!label) return;
 
@@ -1009,13 +923,11 @@ export class FloatingLabels {
 	}
 
 	clearAllLabels(notify = true) {
-		// Added notify flag
 		const hadLabels = this.labels.size > 0;
 		const labelIds = Array.from(this.labels.keys());
 		for (const id of labelIds) {
-			this.removeLabel(id, false); // Remove internally without individual notifications
+			this.removeLabel(id, false);
 		}
-		// Notify once after clearing if requested and if there were labels to clear
 		if (hadLabels && notify) {
 			this._notifyUpdate();
 		}
@@ -1025,10 +937,7 @@ export class FloatingLabels {
 		const label = this.labels.get(id);
 		if (label && label.container) {
 			label.container.visible = visible;
-			// Optionally set children explicitly? Usually not needed if container is hidden.
-			// if(label.background) label.background.visible = visible;
-			// if(label.textSprite) label.textSprite.visible = visible;
-			// if(label.connector) label.connector.visible = visible;
+			label.options.visible = visible; // Store visibility state
 		}
 	}
 
@@ -1039,79 +948,145 @@ export class FloatingLabels {
 		const finalPosition = Array.isArray(newPosition)
 			? new THREE.Vector3(...newPosition)
 			: newPosition.clone();
-		label.container.position.copy(finalPosition);
-		// Update stored target position
+		label.container.position.copy(finalPosition); // Update container position
+		// Update stored target position in options
 		if (label.options) {
-			// Ensure options exist
 			label.options.connectorTarget = finalPosition.clone();
 		}
+		// No need to notify here, position changes are usually frequent during drag/update
+		// Notify should happen when the final position is saved/set.
 	}
-
-	// --- Rendering and Update ---
 
 	update() {
 		if (!this.camera || this.labels.size === 0) return;
 
-		const cameraQuaternion = this.camera.quaternion; // Cache for loop
-		const cameraPosition = this.camera.position; // Cache camera position
+		const cameraQuaternion = this.camera.quaternion;
+		const cameraPosition = this.camera.position;
+		this.camera.updateMatrixWorld();
+		this._cameraRight.setFromMatrixColumn(this.camera.matrixWorld, 0).normalize();
 
 		this.labels.forEach((label) => {
-			if (!label.container) return; // Safety check
+			if (!label.container || !label.options) return;
 
-			// Make label face the camera (billboard effect)
+			// 1. Billboard
 			label.container.quaternion.copy(cameraQuaternion);
 
-			// --- Optional: Distance-based effects ---
-			if (label.options.fadeWithDistance) {
-				const distance = label.container.position.distanceTo(cameraPosition);
-				const fadeStart = label.options.fadeStartDistance || 10;
-				const fadeEnd = label.options.fadeEndDistance || 30;
-				const baseOpacity = label.options.opacity; // Use opacity from options
+			// 2. Dynamic Positioning Check for Left/Right
+			let targetVisualOffset = label.options.calculatedVisualOffset.clone();
+			const intendedPosition = label.options.connectorPosition;
+			let needsFlip = false; // Track if a flip happened
 
-				const distanceOpacity = Math.max(0, Math.min(1, 1 - (distance - fadeStart) / (fadeEnd - fadeStart)));
-				const finalOpacity = baseOpacity * distanceOpacity;
-
-				// Apply opacity (ensure materials exist)
-				if (label.background?.material) label.background.material.opacity = finalOpacity;
-				// Text sprite opacity might only need distance fade, not base opacity multiplication
-				if (label.textSprite?.material) label.textSprite.material.opacity = distanceOpacity;
-				if (label.connector?.material) label.connector.material.opacity = finalOpacity;
-
-				// Hide container if fully faded based on distance opacity
-				label.container.visible = distanceOpacity > 0.01;
-			} else {
-				// Ensure container is visible if not fading
-				label.container.visible = label.options.visible;
+			if (label.options.showConnector && (intendedPosition === "left" || intendedPosition === "right")) {
+				// ... (logic to determine needsFlip and calculate targetVisualOffset) ...
+				const camToLabelDir = this._tempVec3
+					.copy(label.options.connectorTarget)
+					.sub(cameraPosition)
+					.normalize();
+				const screenRight = this._cameraRight.clone().projectOnPlane(camToLabelDir).normalize();
+				const intendedOffset = this.calculateVisualOffset(label.options);
+				const dot = intendedOffset.dot(screenRight);
+				if ((intendedPosition === "left" && dot < 0) || (intendedPosition === "right" && dot > 0)) {
+					needsFlip = true;
+					const flippedSide = intendedPosition === "left" ? "right" : "left";
+					targetVisualOffset = this.calculateVisualOffset({
+						...label.options,
+						connectorPosition: flippedSide,
+					});
+				}
 			}
 
-			// --- Update LineMaterial Resolution (Important!) ---
+			// 3. Apply the potentially updated offset IF it changed
+			if (!label.currentAppliedOffset.equals(targetVisualOffset)) {
+				// Apply offset to background/textsprite positions
+				if (label.background) label.background.position.copy(targetVisualOffset);
+				if (label.textSprite) label.textSprite.position.copy(targetVisualOffset);
+
+				// Update connector geometry if it exists
+				if (label.connector && label.options.showConnector) {
+					// ... (update connector geometry logic) ...
+					const newStartPoint = this.calculateConnectorStartPoint(targetVisualOffset, label.options);
+					const endPoint = new THREE.Vector3(0, 0, 0);
+					if (label.connector.geometry.setPositions) {
+						label.connector.geometry.setPositions([
+							newStartPoint.x,
+							newStartPoint.y,
+							newStartPoint.z,
+							endPoint.x,
+							endPoint.y,
+							endPoint.z,
+						]);
+						label.connector.computeLineDistances();
+					} else {
+						// Fallback
+						// ... (recreate connector if needed) ...
+					}
+				}
+				label.currentAppliedOffset.copy(targetVisualOffset);
+			}
+
+			// --- 4. Adjust Background Z Position based on Flip ---
+			if (label.background) {
+				// Move all elements forward in the flipped case
+				const zBase = needsFlip ? 0.01 : 0;
+
+				// Set appropriate z-offsets with larger gaps between elements
+				if (label.connector) {
+					// Always put connector furthest back
+					label.connector.position.z = zBase - 0.005;
+				}
+
+				// Background in the middle
+				label.background.position.z = zBase;
+
+				// Text sprite always in front
+				if (label.textSprite) {
+					label.textSprite.position.z = zBase + 0.005;
+				}
+			}
+			// --- REMOVED Connector Z adjustment ---
+
+			// --- 5. Optional: Distance-based effects & FINAL VISIBILITY ---
+			// ... (visibility logic remains the same, using label.options.showConnector) ...
+			let finalContainerVisible = label.options.visible;
+			let finalConnectorVisible = label.options.showConnector && label.options.visible;
+			// ... (fade logic) ...
+			// Apply final visibility
+			label.container.visible = finalContainerVisible;
+			if (label.connector) {
+				label.connector.visible = finalConnectorVisible;
+			}
+
+			// --- 6. Update LineMaterial Resolution ---
 			if (label.connector?.material instanceof LineMaterial) {
-				const resolution = new THREE.Vector2();
+				const resolution = this._tempVec3; // Reuse temp vector
 				if (this.renderer) this.renderer.getDrawingBufferSize(resolution);
 				else resolution.set(window.innerWidth, window.innerHeight);
 
-				// Check if resolution actually changed to avoid unnecessary updates
 				if (!label.connector.material.resolution.equals(resolution)) {
 					label.connector.material.resolution.copy(resolution);
 				}
 			}
-		});
-	}
+			// --- End LineMaterial Update ---
+		}); // End labels.forEach loop
+	} // End update() function
 
 	setupViewerIntegration() {
 		if (this.viewer?.update) {
-			// Check if viewer and update exist
-			const originalUpdate = this.viewer.update.bind(this.viewer); // Bind original update to viewer context
-			const self = this; // Reference to FloatingLabels instance
-
+			const originalUpdate = this.viewer.update.bind(this.viewer);
+			const self = this;
 			this.viewer.update = function (...args) {
-				// Use rest parameters for flexibility
-				originalUpdate(...args); // Call original viewer update
-				self.update(); // Call labels update
+				originalUpdate(...args);
+				self.update(); // Call labels update after viewer update
 			};
 			console.log("FloatingLabels integrated into viewer update loop.");
 		} else {
 			console.warn("Viewer update loop not found for FloatingLabels integration.");
+			// Fallback: manual update loop if needed
+			// const animate = () => {
+			// 	requestAnimationFrame(animate);
+			// 	this.update();
+			// };
+			// animate();
 		}
 	}
 
@@ -1133,14 +1108,17 @@ export class FloatingLabels {
 			this.viewer.renderer.domElement.removeEventListener("click", this.clickHandler);
 		}
 		this.clickHandler = null;
-		this.clearAllLabels(false); // Clear without final notification during dispose
+		this.clearAllLabels(false); // Clear without final notification
 		if (this.labelsGroup?.parent) this.labelsGroup.parent.remove(this.labelsGroup);
 		this.labelsGroup = null;
 		this.labels.clear();
+
+		// TODO: If viewer integration modified the original update, restore it here if possible/necessary
+
 		this.viewer = null;
 		this.scene = null;
 		this.camera = null;
 		this.renderer = null;
-		this.callbacks = {}; // Clear callbacks
+		this.callbacks = {};
 	}
 }

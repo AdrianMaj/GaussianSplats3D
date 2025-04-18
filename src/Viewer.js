@@ -374,6 +374,8 @@ export class Viewer {
 		this.disposed = false;
 		this.disposePromise = null;
 
+		this.role = options.role || "user";
+
 		this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
 		this.controlsUI = new Controls(this.rootElement || document.body, false);
 		this.controlsUI.hide();
