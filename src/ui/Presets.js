@@ -17,11 +17,7 @@ export class Presets {
 			options.onPresetSelected || ((preset) => console.log(`Preset ${preset.id} selected`));
 
 		// Single update callback replacing individual callbacks
-		this.onUpdate =
-			options.onUpdate ||
-			((presets) => {
-				console.log("Fill the function to update presets: ", presets);
-			});
+		this.onUpdate = options.onUpdate;
 
 		this.role = options.role || "user";
 		this.editMode = false; // Start in view mode, not edit mode

@@ -133,7 +133,7 @@ export class FloatingLabels {
 		this.editUI.style.borderRadius = "8px";
 		this.editUI.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.5)";
 		this.editUI.style.zIndex = "1000";
-		this.editUI.style.width = "300px";
+		this.editUI.style.minWidth = "370px";
 		this.editUI.style.fontFamily = "Arial, sans-serif";
 
 		// Create UI content

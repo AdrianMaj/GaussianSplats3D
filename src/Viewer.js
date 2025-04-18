@@ -381,7 +381,7 @@ export class Viewer {
 			presets: options.presets,
 			onPresetSelected: this.onPresetSelected.bind(this),
 			role: options.role ?? "user",
-			onUpdate: options.onUpdate,
+			onUpdate: options.role === "admin" && options.onUpdate,
 		});
 		this.presetsUI.hide();
 
@@ -635,9 +635,7 @@ export class Viewer {
 	}
 
 	handleLabelsUpdateFromManager(allCurrentLabelsData) {
-		console.log(`[Viewer] Received labels update from manager with ${allCurrentLabelsData.length} labels.`);
-		// Check if the external callback (from React) exists and call it
-		if (this.onLabelsUpdateCallback) {
+		if (this.onLabelsUpdateCallback && this.role === "admin") {
 			console.log("[Viewer] Forwarding label update to external callback.");
 			try {
 				this.onLabelsUpdateCallback(allCurrentLabelsData);
