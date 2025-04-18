@@ -705,6 +705,7 @@ export class FloatingLabels {
 			depthTest: options.depthTest,
 		});
 		const connector = new Line2(geometry, material);
+		connector.position.z = -0.01;
 		connector.computeLineDistances();
 		connector.renderOrder = options.renderOrderConnector;
 
@@ -957,6 +958,57 @@ export class FloatingLabels {
 		// Notify should happen when the final position is saved/set.
 	}
 
+	// Add this method to properly update the connector start point when flipping
+	updateConnectorStartPoint(label, targetVisualOffset, needsFlip) {
+		if (!label.connector || !label.options.showConnector) return;
+
+		// Get the current options
+		const options = { ...label.options };
+
+		// If we're flipping, we need to use the opposite connector position for calculations
+		if (needsFlip) {
+			// Temporarily swap the connector position for calculation
+			const originalPosition = options.connectorPosition;
+			options.connectorPosition =
+				originalPosition === "left" ? "right" : originalPosition === "right" ? "left" : originalPosition;
+
+			// Calculate the correct start point based on flipped position
+			const newStartPoint = this.calculateConnectorStartPoint(targetVisualOffset, options);
+
+			// Restore original position in options
+			options.connectorPosition = originalPosition;
+
+			// Update connector with new start point
+			const endPoint = new THREE.Vector3(0, 0, 0);
+			if (label.connector.geometry.setPositions) {
+				label.connector.geometry.setPositions([
+					newStartPoint.x,
+					newStartPoint.y,
+					newStartPoint.z,
+					endPoint.x,
+					endPoint.y,
+					endPoint.z,
+				]);
+				label.connector.computeLineDistances();
+			}
+		} else {
+			// Normal case - use standard calculation
+			const newStartPoint = this.calculateConnectorStartPoint(targetVisualOffset, options);
+			const endPoint = new THREE.Vector3(0, 0, 0);
+			if (label.connector.geometry.setPositions) {
+				label.connector.geometry.setPositions([
+					newStartPoint.x,
+					newStartPoint.y,
+					newStartPoint.z,
+					endPoint.x,
+					endPoint.y,
+					endPoint.z,
+				]);
+				label.connector.computeLineDistances();
+			}
+		}
+	}
+
 	update() {
 		if (!this.camera || this.labels.size === 0) return;
 
@@ -1001,30 +1053,12 @@ export class FloatingLabels {
 				if (label.background) label.background.position.copy(targetVisualOffset);
 				if (label.textSprite) label.textSprite.position.copy(targetVisualOffset);
 
-				// Update connector geometry if it exists
-				if (label.connector && label.options.showConnector) {
-					// ... (update connector geometry logic) ...
-					const newStartPoint = this.calculateConnectorStartPoint(targetVisualOffset, label.options);
-					const endPoint = new THREE.Vector3(0, 0, 0);
-					if (label.connector.geometry.setPositions) {
-						label.connector.geometry.setPositions([
-							newStartPoint.x,
-							newStartPoint.y,
-							newStartPoint.z,
-							endPoint.x,
-							endPoint.y,
-							endPoint.z,
-						]);
-						label.connector.computeLineDistances();
-					} else {
-						// Fallback
-						// ... (recreate connector if needed) ...
-					}
-				}
+				// Call our new method to update connector start point properly
+				this.updateConnectorStartPoint(label, targetVisualOffset, needsFlip);
+
 				label.currentAppliedOffset.copy(targetVisualOffset);
 			}
 
-			// --- 4. Adjust Background Z Position based on Flip ---
 			if (label.background) {
 				// Move all elements forward in the flipped case
 				const zBase = needsFlip ? 0.01 : 0;
