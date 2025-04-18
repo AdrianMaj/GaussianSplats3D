@@ -513,7 +513,6 @@ export class Viewer {
 			this.controlsUI.updateToggleState("KeyZ", this.orbitAroundFocalPoint);
 		}
 	}
-
 	init() {
 		if (this.initialized) return;
 
@@ -552,7 +551,8 @@ export class Viewer {
 			}
 		});
 
-		this.setupLabels();
+		// Initialize labels but keep them hidden until loading completes
+		this.setupLabels(false);
 
 		this.setupControlsIntegration();
 
@@ -604,12 +604,12 @@ export class Viewer {
 	/**
 	 * Set up floating labels in the scene
 	 */
-	setupLabels() {
-		console.log("[Viewer] Attempting to set up labels...");
+	setupLabels(shouldBeVisible = false) {
+		console.log(`[Viewer] Attempting to set up labels... (shouldBeVisible: ${shouldBeVisible})`);
 		if (this.threeScene && this.camera && this.renderer) {
 			// Callbacks passed TO FloatingLabels instance
 			const internalLabelCallbacks = {
-				// *** NEW: Pass the viewer's handler function for the label manager's update notification ***
+				// Pass the viewer's handler function for the label manager's update notification
 				onLabelsUpdate: this.handleLabelsUpdateFromManager.bind(this),
 				// Pass through modal callbacks
 				onModalOpen: this.onLabelModalOpen, // Assumes already bound
@@ -618,17 +618,25 @@ export class Viewer {
 
 			if (!this.labelsManager) {
 				try {
-					// Pass initial data AND the *new* internal callbacks
+					// Pass initial data AND the internal callbacks
 					this.labelsManager = new FloatingLabels(this, this.initialLabelData, internalLabelCallbacks);
 					console.log("[Viewer] Labels initialized successfully.");
+
+					// Important: Immediately hide the labels group if they shouldn't be visible yet
+					if (!shouldBeVisible) {
+						this.labelsManager.hide();
+					}
 				} catch (error) {
 					console.error("[Viewer] Error initializing FloatingLabels:", error);
 				}
 			} else {
 				console.log("[Viewer] Labels manager already exists.");
-				// Update data if needed:
-				// this.labelsManager.clearAllLabels(false); // Don't notify from here
-				// this.labelsManager.addLabels(this.initialLabelData, false); // Don't notify from here
+				// Set visibility based on parameter
+				if (shouldBeVisible) {
+					this.labelsManager.show();
+				} else {
+					this.labelsManager.hide();
+				}
 			}
 		} else {
 			console.warn("[Viewer] Cannot setup labels: threeScene, camera, or renderer not ready.");
@@ -1522,18 +1530,8 @@ export class Viewer {
 					if (queuedBuild.firstBuild) {
 						progressiveLoadFirstSectionBuildPromise.resolve();
 					} else if (queuedBuild.finalBuild) {
-						// When the final build is complete, show the UI components
-						if (this.controlsUI) this.controlsUI.show();
-						if (this.presetsUI) this.presetsUI.show();
-
-						// Also make sure labels are initialized and shown
-						if (this.labelsManager) {
-							this.labelsManager.show();
-						} else {
-							this.setupLabels();
-							if (this.labelsManager) this.labelsManager.show();
-						}
-
+						// For progressive loading, we don't immediately show UI here
+						// The UI will be shown after optimization completes in onSplatTreeReady
 						splatSceneDownloadAndBuildPromise.resolve();
 						this.clearSplatSceneDownloadAndBuildPromise();
 					}
@@ -1867,9 +1865,8 @@ export class Viewer {
 									}
 									this.runAfterNextSort.push(() => {
 										removeSplatProcessingTask();
-										// IMPORTANT: Remove these lines - we don't want to show UI components here
-										// this.controlsUI.show();
-										// this.presetsUI.show();
+										// IMPORTANT: Do NOT show UI components here
+										// Let onSplatTreeReady handle UI display when optimization is complete
 										resolve();
 									});
 								}
@@ -1880,7 +1877,6 @@ export class Viewer {
 			});
 		};
 	})();
-
 	/**
 	 * Add one or more instances of SplatBuffer to the SplatMesh instance managed by the viewer. By default, this function is additive;
 	 * all splat buffers contained by the viewer's splat mesh before calling this function will be preserved. This behavior can be
@@ -1943,22 +1939,26 @@ export class Viewer {
 					this.loadingSpinner.removeTask(splatOptimizingTaskId);
 					splatOptimizingTaskId = null;
 
-					// Add this check for finalBuild to ensure we only show UI at the very end
+					// Always wait for finalBuild and finished optimization before showing UI
+					// This ensures UI appears at the same time for both progressive and non-progressive loading
 					if (finalBuild) {
-						// Now that everything is truly finished, show the UI components
+						// Now that everything is truly finished (including optimization), show the UI components
 						if (this.controlsUI) this.controlsUI.show();
 						if (this.presetsUI) this.presetsUI.show();
 
-						// Also make sure labels are initialized and shown
+						// For labels: either show existing ones or initialize with visible=true
 						if (this.labelsManager) {
 							this.labelsManager.show();
 						} else {
-							this.setupLabels();
-							if (this.labelsManager) this.labelsManager.show();
+							// Pass true to make labels visible now that loading is complete
+							this.setupLabels(true);
 						}
+
+						console.log("Loading complete - UI components are now being displayed");
 					}
 				}
 			};
+
 			const buildResults = this.splatMesh.build(
 				allSplatBuffers,
 				allSplatBufferOptions,
