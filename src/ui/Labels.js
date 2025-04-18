@@ -178,7 +178,7 @@ export class FloatingLabels {
 					</div>
 				</div>
 			</div>
-            <div id="connector-options" style="margin-bottom: 15px; padding-left: 20px;">
+            <div id="connector-options" style="margin-bottom: 15px;">
                 <div style="margin-bottom: 10px;">
                     <label style="display: block; margin-bottom: 5px;">Position:</label>
                     <select id="connector-position" style="width: 100%; padding: 8px; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
@@ -627,91 +627,98 @@ export class FloatingLabels {
 	}
 
 	createTextSprite(text, options = {}) {
-		// console.log(`[createTextSprite] Called with text: "${text}"`, options);
 		const canvas = document.createElement("canvas");
 		const context = canvas.getContext("2d");
 		const font = options.font;
 		const textColor = options.textColor;
-		const width = options.width; // Desired world width of the *background*
-		const height = options.height; // Desired world height of the *background*
-		const padding = options.padding;
-		const scale = 4; // Resolution scale factor
+		const width = options.width; // Desired world width of the background
+		const height = options.height; // Desired world height of the background
+		const padding = options.padding || 10;
 
+		// Increase resolution scale for sharper text
+		const scale = 8; // Higher scale for better text clarity
+
+		// Set font on context for text measurements
 		context.font = font;
+
+		// Handle multi-line text
 		const lines = text ? text.split("\\n") : [""];
+
+		// Calculate text dimensions
 		let maxTextWidth = 0;
-		lines.forEach((line) => (maxTextWidth = Math.max(maxTextWidth, context.measureText(line).width)));
+		lines.forEach((line) => {
+			maxTextWidth = Math.max(maxTextWidth, context.measureText(line).width);
+		});
+
+		// Extract font size from the font string
 		const fontSize = parseInt(font, 10) || 24;
 		const estimatedLineHeight = fontSize * 1.2;
 		const totalTextHeight = estimatedLineHeight * lines.length;
-		const canvasWidthPixels = Math.max(1, Math.ceil(maxTextWidth + padding * 2));
-		const canvasHeightPixels = Math.max(1, Math.ceil(totalTextHeight + padding * 2));
-		const canvasWidth = canvasWidthPixels * scale;
-		const canvasHeight = canvasHeightPixels * scale;
 
-		if (canvasWidth <= 0 || canvasHeight <= 0) {
-			console.error("[createTextSprite] Invalid canvas dimensions!", canvasWidth, canvasHeight);
-			// Return a placeholder sprite if canvas creation fails
-			const errorMat = new THREE.SpriteMaterial({
-				color: 0xff00ff,
-				sizeAttenuation: options.sizeAttenuation,
-			});
-			const errorSprite = new THREE.Sprite(errorMat);
-			errorSprite.scale.set(width, height, 1); // Use background dimensions
-			return errorSprite;
-		}
+		// Calculate canvas dimensions with padding
+		const canvasWidthPixels = Math.max(100, Math.ceil(maxTextWidth + padding * 2));
+		const canvasHeightPixels = Math.max(50, Math.ceil(totalTextHeight + padding * 2));
 
-		canvas.width = canvasWidth;
-		canvas.height = canvasHeight;
+		// Scale canvas for higher resolution
+		canvas.width = canvasWidthPixels * scale;
+		canvas.height = canvasHeightPixels * scale;
 
+		// Clear and prepare canvas
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		context.scale(scale, scale);
 		context.font = font;
 		context.fillStyle = textColor;
 		context.textAlign = "center";
 		context.textBaseline = "middle";
+
+		// Draw text centered in canvas
 		const startX = canvasWidthPixels / 2;
 		const startY = canvasHeightPixels / 2 - (totalTextHeight - estimatedLineHeight) / 2;
+
 		lines.forEach((line, i) => {
 			context.fillText(line, startX, startY + i * estimatedLineHeight);
 		});
 
+		// Create texture from canvas
 		const texture = new THREE.CanvasTexture(canvas);
 		texture.minFilter = THREE.LinearFilter;
 		texture.magFilter = THREE.LinearFilter;
 		texture.needsUpdate = true;
-		if (!texture.image) console.error("[createTextSprite] Texture image (canvas) is missing!");
 
+		// Create sprite material with the texture
 		const spriteMaterial = new THREE.SpriteMaterial({
 			map: texture,
 			transparent: true,
 			depthTest: options.depthTest,
 			sizeAttenuation: options.sizeAttenuation,
 		});
-		spriteMaterial.needsUpdate = true;
-		if (!spriteMaterial.map) console.error("[createTextSprite] Material map is null after creation!");
 
+		// Create the sprite
 		const sprite = new THREE.Sprite(spriteMaterial);
-		// Scale the sprite to fit *within* the background dimensions while maintaining aspect ratio
-		const textureAspect = canvasWidth / canvasHeight;
-		const backgroundAspect = width / height;
 
+		// Calculate aspect ratio to maintain text proportion
+		const textureAspect = canvas.width / canvas.height;
+
+		// Scale sprite to fit the background while maintaining aspect ratio
+		// Use a consistent approach to avoid very small text
 		let spriteWidth, spriteHeight;
-		if (textureAspect > backgroundAspect) {
-			// Texture is wider than background shape
-			spriteWidth = width - (padding / scale) * 0.1; // Use background width (adjust for padding visually)
-			spriteHeight = spriteWidth / textureAspect;
-		} else {
-			// Texture is taller or same aspect as background shape
-			spriteHeight = height - (padding / scale) * 0.1; // Use background height (adjust for padding visually)
+
+		// Make text fill most of the background area with a small margin
+		const margin = 0.05; // 5% margin
+		spriteWidth = width * (1 - margin * 2);
+		spriteHeight = spriteWidth / textureAspect;
+
+		// If height exceeds background, constrain by height instead
+		if (spriteHeight > height * (1 - margin * 2)) {
+			spriteHeight = height * (1 - margin * 2);
 			spriteWidth = spriteHeight * textureAspect;
 		}
 
+		// Apply calculated scale
 		sprite.scale.set(spriteWidth, spriteHeight, 1);
+
+		// Ensure sprite renders on top
 		sprite.renderOrder = options.renderOrderText;
-		// console.log("[createTextSprite] Sprite created:", sprite);
-		if (sprite.scale.x <= 0 || sprite.scale.y <= 0)
-			console.warn("[createTextSprite] Sprite scale is zero or negative!", sprite.scale);
 
 		return sprite;
 	}
