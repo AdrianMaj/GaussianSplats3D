@@ -1052,25 +1052,28 @@ export class Viewer {
 				preventDefault = true;
 				break;
 
-			// Add these new cases for label management
 			case "KeyL":
-				// Toggle label edit mode
-				if (this.labelsManager) {
+				if (this.labelsManager && this.role === "admin") {
 					const editMode = this.labelsManager.toggleEditMode();
 					if (editMode && !this.showMeshCursor) {
 						this.showMeshCursor = true;
 					}
 				} else {
-					console.warn("KeyL pressed, but labelsManager not ready.");
+					console.warn("KeyL pressed, but labelsManager not ready or no access.");
 				}
 				break;
 			case "KeyN":
 				// Create new label at mesh cursor
-				if (this.labelsManager && this.labelsManager.editMode && this.showMeshCursor) {
+				if (
+					this.labelsManager &&
+					this.labelsManager.editMode &&
+					this.showMeshCursor &&
+					this.role === "admin"
+				) {
 					this.labelsManager.createLabelAtCursor();
 				} else {
 					console.warn(
-						"KeyN pressed, but conditions not met (labelsManager ready? editMode active? cursor visible?).",
+						"KeyN pressed, but conditions not met (labelsManager ready? editMode active? cursor visible? admin mode?).",
 					);
 				}
 				break;
