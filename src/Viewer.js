@@ -362,7 +362,7 @@ export class Viewer {
 			this.barColor,
 		);
 		this.loadingProgressBar.hide();
-		this.infoPanel = new InfoPanel(this.rootElement || document.body);
+		this.infoPanel = new InfoPanel(this.rootElement || document.body, options.role ?? "user");
 		this.infoPanel.hide();
 
 		this.usingExternalCamera = this.dropInMode || this.camera ? true : false;
@@ -378,14 +378,13 @@ export class Viewer {
 
 		this.gsVisionLogo = new GSVisionLogo(this.rootElement || document.body, this.hideAttribution);
 		this.controlsUI = new Controls(this.rootElement || document.body, false);
-		this.controlsUI.hide();
 		this.presetsUI = new Presets(this.rootElement || document.body, {
 			presets: options.presets,
 			onPresetSelected: this.onPresetSelected.bind(this),
 			role: options.role ?? "user",
 			onUpdate: options.role === "admin" && options.onUpdate,
 		});
-		this.presetsUI.hide();
+		this.presetsUI.hide(); // Always hide by default
 
 		this.setupControlsIntegration();
 
@@ -401,7 +400,7 @@ export class Viewer {
 
 		this.onLabelsUpdateCallback = options.onLabelsUpdate;
 		this.initialLabelData = options.labels ?? [];
-		this._uiVisible = undefined;
+		this._uiVisible = false; // Set initial state to false
 
 		this.orbitAroundFocalPoint =
 			options.orbitAroundFocalPoint !== undefined ? options.orbitAroundFocalPoint : true;
@@ -1523,6 +1522,18 @@ export class Viewer {
 					if (queuedBuild.firstBuild) {
 						progressiveLoadFirstSectionBuildPromise.resolve();
 					} else if (queuedBuild.finalBuild) {
+						// When the final build is complete, show the UI components
+						if (this.controlsUI) this.controlsUI.show();
+						if (this.presetsUI) this.presetsUI.show();
+
+						// Also make sure labels are initialized and shown
+						if (this.labelsManager) {
+							this.labelsManager.show();
+						} else {
+							this.setupLabels();
+							if (this.labelsManager) this.labelsManager.show();
+						}
+
 						splatSceneDownloadAndBuildPromise.resolve();
 						this.clearSplatSceneDownloadAndBuildPromise();
 					}
@@ -1856,8 +1867,9 @@ export class Viewer {
 									}
 									this.runAfterNextSort.push(() => {
 										removeSplatProcessingTask();
-										this.controlsUI.show();
-										this.presetsUI.show();
+										// IMPORTANT: Remove these lines - we don't want to show UI components here
+										// this.controlsUI.show();
+										// this.presetsUI.show();
 										resolve();
 									});
 								}
@@ -1930,6 +1942,21 @@ export class Viewer {
 				if (finished && splatOptimizingTaskId) {
 					this.loadingSpinner.removeTask(splatOptimizingTaskId);
 					splatOptimizingTaskId = null;
+
+					// Add this check for finalBuild to ensure we only show UI at the very end
+					if (finalBuild) {
+						// Now that everything is truly finished, show the UI components
+						if (this.controlsUI) this.controlsUI.show();
+						if (this.presetsUI) this.presetsUI.show();
+
+						// Also make sure labels are initialized and shown
+						if (this.labelsManager) {
+							this.labelsManager.show();
+						} else {
+							this.setupLabels();
+							if (this.labelsManager) this.labelsManager.show();
+						}
+					}
 				}
 			};
 			const buildResults = this.splatMesh.build(

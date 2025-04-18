@@ -1,5 +1,5 @@
 export class InfoPanel {
-	constructor(container) {
+	constructor(container, role) {
 		this.container = container || document.body;
 
 		this.infoCells = {};
@@ -21,8 +21,12 @@ export class InfoPanel {
 
 		const staticLayout = [
 			["Toggle UI", "F1 Key"],
-			["Toggle Label Edit Mode", "L Key"],
-			["Create new label", "N Key"],
+			...(role === "admin"
+				? [
+						["Label Edit Mode", "L Key"],
+						["Create new label", "N Key"],
+				  ]
+				: []),
 		];
 
 		this.infoPanelContainer = document.createElement("div");
