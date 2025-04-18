@@ -161,6 +161,23 @@ export class FloatingLabels {
                 <input type="checkbox" id="label-connector" checked style="margin-right: 5px;">
                 <label for="label-connector">Show connector</label>
             </div>
+			<div style="margin-bottom: 15px;">
+				<label style="display: block; margin-bottom: 5px;">Anchor Point Coordinates:</label>
+				<div style="display: flex; gap: 10px;">
+					<div style="flex: 1;">
+						<label style="display: block; margin-bottom: 5px;">X:</label>
+						<input type="number" id="anchor-x" step="0.01" style="width: 100%; padding: 8px; box-sizing: border-box; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
+					</div>
+					<div style="flex: 1;">
+						<label style="display: block; margin-bottom: 5px;">Y:</label>
+						<input type="number" id="anchor-y" step="0.01" style="width: 100%; padding: 8px; box-sizing: border-box; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
+					</div>
+					<div style="flex: 1;">
+						<label style="display: block; margin-bottom: 5px;">Z:</label>
+						<input type="number" id="anchor-z" step="0.01" style="width: 100%; padding: 8px; box-sizing: border-box; background: #3a3a3a; color: white; border: 1px solid #555; border-radius: 4px;">
+					</div>
+				</div>
+			</div>
             <div id="connector-options" style="margin-bottom: 15px; padding-left: 20px;">
                 <div style="margin-bottom: 10px;">
                     <label style="display: block; margin-bottom: 5px;">Position:</label>
@@ -228,10 +245,14 @@ export class FloatingLabels {
 			document.getElementById("connector-width").value = "2";
 			document.getElementById("connector-length").value = "0.5";
 			document.getElementById("connector-color").value = "#ffffff";
+			document.getElementById("anchor-x").value = this.pendingCursorPosition?.x.toFixed(2) || "0.00";
+			document.getElementById("anchor-y").value = this.pendingCursorPosition?.y.toFixed(2) || "0.00";
+			document.getElementById("anchor-z").value = this.pendingCursorPosition?.z.toFixed(2) || "0.00";
 		} else {
 			const label = this.labels.get(labelId);
 			if (!label) return;
 			const options = label.options || {};
+			const currentTargetPos = options.connectorTarget || label.container.position;
 			document.getElementById("label-text-input").value = label.text || "";
 			document.getElementById("label-bg-color").value = this.colorToHex(options.backgroundColor || "#333333");
 			document.getElementById("label-text-color").value = this.colorToHex(options.textColor || "#ffffff");
@@ -242,6 +263,9 @@ export class FloatingLabels {
 			document.getElementById("connector-width").value = options.connectorWidth || "2";
 			document.getElementById("connector-length").value = options.connectorLength || "0.5";
 			document.getElementById("connector-color").value = this.colorToHex(options.connectorColor || "#ffffff");
+			document.getElementById("anchor-x").value = currentTargetPos.x.toFixed(2);
+			document.getElementById("anchor-y").value = currentTargetPos.y.toFixed(2);
+			document.getElementById("anchor-z").value = currentTargetPos.z.toFixed(2);
 		}
 
 		document.getElementById("connector-options").style.display = document.getElementById("label-connector")
@@ -305,6 +329,14 @@ export class FloatingLabels {
 
 		let changed = false;
 
+		const anchorX = parseFloat(document.getElementById("anchor-x").value) || 0;
+		const anchorY = parseFloat(document.getElementById("anchor-y").value) || 0;
+		const anchorZ = parseFloat(document.getElementById("anchor-z").value) || 0;
+
+		console.log(`[saveEditUIData] Form values: X=${anchorX}, Y=${anchorY}, Z=${anchorZ}`);
+
+		const newAnchorPos = new THREE.Vector3(anchorX, anchorY, anchorZ);
+
 		if (this.selectedLabelId) {
 			const label = this.labels.get(this.selectedLabelId);
 			if (label) {
@@ -324,9 +356,22 @@ export class FloatingLabels {
 
 				const textChanged = text !== label.text;
 
-				// Preserve the existing target position
-				currentOptions.connectorTarget =
-					label.options.connectorTarget?.clone() || label.container.position.clone();
+				const currentPos = label.options.connectorTarget || label.container.position;
+				const anchorChanged = !currentPos.equals(newAnchorPos);
+
+				if (anchorChanged) {
+					// Update container position to new anchor
+					label.container.position.copy(newAnchorPos);
+
+					// Update stored target in options
+					currentOptions.connectorTarget = newAnchorPos.clone();
+
+					changed = true;
+				} else {
+					// Only if NOT changed, preserve the existing target position
+					currentOptions.connectorTarget =
+						label.options.connectorTarget?.clone() || label.container.position.clone();
+				}
 
 				this.updateLabelText(this.selectedLabelId, text, currentOptions, appearanceChanged || textChanged);
 
@@ -335,13 +380,10 @@ export class FloatingLabels {
 				changed = true;
 			}
 		} else if (this.pendingCursorPosition) {
-			// Creating a new label
 			const id = `label-${Date.now()}`;
-			const targetPosition = this.pendingCursorPosition.clone();
-			// Store target in options right away for new labels
-			currentOptions.connectorTarget = targetPosition.clone();
-			this.addLabel(id, targetPosition, text, currentOptions); // addLabel internally notifies
-			changed = false; // Notification already happened in addLabel
+			currentOptions.connectorTarget = newAnchorPos.clone();
+			this.addLabel(id, newAnchorPos, text, currentOptions);
+			changed = false;
 			this.pendingCursorPosition = null;
 		}
 
